@@ -1,0 +1,9 @@
+.svn
+./bin
+./languages
+./maintenance
+./mw-config
+./tests
+LocalSettings.php
+README
+
