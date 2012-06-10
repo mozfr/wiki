@@ -338,7 +338,7 @@ class GMOTemplate extends QuickTemplate {
                             (0xc0 | ($hex_table[substr($value,0,1)]<<4))
                            | (0x03 & $hex_table[substr($value,1,1)])
                     );
-                    $res[$key] = '%C3%' . $value;
+                    $res[$key] = '%C1%' . $value;
                 }
 
                 $raw_url_encoded = str_replace(
