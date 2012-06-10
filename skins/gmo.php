@@ -306,7 +306,9 @@ class GMOTemplate extends QuickTemplate {
 </div>
 <?php
     }
-function urlRawDecode($raw_url_encoded) {
+    function createBreadcrumbs($protocol) {
+
+        function urlRawDecode($raw_url_encoded) {
         # Hex conversion table
         $hex_table = array(
             0 => 0x00,
@@ -350,8 +352,6 @@ function urlRawDecode($raw_url_encoded) {
             # Return decoded  raw url encoded data
             return rawurldecode($raw_url_encoded);
     }
-
-    function createBreadcrumbs($protocol) {
         $str = $protocol.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
         $query = parse_url($str, PHP_URL_QUERY);
         parse_str($query, $search_params);
