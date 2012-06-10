@@ -59,18 +59,18 @@ class GMOTemplate extends QuickTemplate {
         $this->skin = $skin = $this->data['skin'];
         $this->action = $wgRequest->getText( 'action' );
         $this->stylepath = $this->data['stylepath'].'/'.$this->data['stylename'];
-        
+
         // Suppress warnings to prevent notices about missing indexes in $this->data
         wfSuppressWarnings();
         $this->drawpage();
         wfRestoreWarnings();
     } // end of execute() method
 
-    
+
     /*************************************************************************************************/
     function drawpage() {
-    	$this->doctype();
-    	$this->head();
+        $this->doctype();
+        $this->head();
         $this->header();
         $this->body();
         $this->footer();
@@ -94,27 +94,27 @@ class GMOTemplate extends QuickTemplate {
             print($doctype);
         }
     }
-    
+
     /*************************************************************************************************/
     function head() {
 ?>
 <head>
-	<meta http-equiv="Content-Type" content="<?php $this->text('mimetype') ?>; charset=<?php $this->text('charset') ?>" />
-	<?php $this->html('headlinks') ?>
-	<title><?php $this->text('pagetitle') ?></title>
-	<?php $this->html('csslinks') ?>
+    <meta http-equiv="Content-Type" content="<?php $this->text('mimetype') ?>; charset=<?php $this->text('charset') ?>" />
+    <?php $this->html('headlinks') ?>
+    <title><?php $this->text('pagetitle') ?></title>
+    <?php $this->html('csslinks') ?>
 
-	<link rel="stylesheet" type="text/css" media="print" href="<?php $this->text('stylepath') ?>/common/commonPrint.css" />
-	<?php print Skin::makeGlobalVariablesScript( $this->data ); ?>
-	<script type="text/javascript" src="<?php                                   $this->text('stylepath' ) ?>/common/wikibits.js"></script>
-	<?php if($this->data['jsvarurl'  ]) { ?><script type="text/javascript" src="<?php $this->text('jsvarurl'  ) ?>"></script><?php } ?>
-	<?php   if($this->data['pagecss']) { ?>
-			<style type="text/css"><?php $this->html('pagecss') ?></style>
-	<?php   } ?>
-	<?php if($this->data['usercss'   ]) { ?><style type="text/css"><?php              $this->html('usercss'   ) ?></style><?php    } ?>
-	<?php if($this->data['userjs'    ]) { ?><script type="text/javascript" src="<?php $this->text('userjs'    ) ?>"></script><?php } ?>
-	<?php if($this->data['userjsprev']) { ?><script type="text/javascript"><?php      $this->html('userjsprev') ?></script><?php   } ?>
-	<?php $this->html('headscripts') ?>
+    <link rel="stylesheet" type="text/css" media="print" href="<?php $this->text('stylepath') ?>/common/commonPrint.css" />
+    <?php print Skin::makeGlobalVariablesScript( $this->data ); ?>
+    <script type="text/javascript" src="<?php                                   $this->text('stylepath' ) ?>/common/wikibits.js"></script>
+    <?php if($this->data['jsvarurl'  ]) { ?><script type="text/javascript" src="<?php $this->text('jsvarurl'  ) ?>"></script><?php } ?>
+    <?php   if($this->data['pagecss']) { ?>
+            <style type="text/css"><?php $this->html('pagecss') ?></style>
+    <?php   } ?>
+    <?php if($this->data['usercss'   ]) { ?><style type="text/css"><?php              $this->html('usercss'   ) ?></style><?php    } ?>
+    <?php if($this->data['userjs'    ]) { ?><script type="text/javascript" src="<?php $this->text('userjs'    ) ?>"></script><?php } ?>
+    <?php if($this->data['userjsprev']) { ?><script type="text/javascript"><?php      $this->html('userjsprev') ?></script><?php   } ?>
+    <?php $this->html('headscripts') ?>
     <script src="/load.php?debug=false&amp;lang=en&amp;modules=startup&amp;only=scripts&amp;skin=gmo&amp;*"></script>
     <script src="/load.php?debug=false&amp;lang=en&amp;modules=site&amp;only=scripts&amp;skin=gmo&amp;*"></script>
     <script>if ( window.mediaWiki ) {
@@ -131,7 +131,7 @@ class GMOTemplate extends QuickTemplate {
     /*************************************************************************************************/
     function header() {
         global $wgStylePath;
-    	
+
 ?>
 <body<?php if($this->data['body_ondblclick']) { ?> ondblclick="<?php $this->text('body_ondblclick') ?>"<?php } ?>
 <?php if($this->data['body_onload']) { ?> onload="<?php $this->text('body_onload') ?>"<?php } ?>
@@ -154,17 +154,17 @@ class GMOTemplate extends QuickTemplate {
                 echo htmlspecialchars($action['text']) ?></a></li><?php
             } ?>
         </ul>
-            
+
         <form action="<?php $this->text('searchaction') ?>" id="quick-search"><div>
-	        <input id="q" name="search" type="text" />
+            <input id="q" name="search" type="text" />
             <input type="image" id="quick-search-btn" alt="Search" src="<?=$wgStylePath?>/gmo/img/screen/template/search-submit.png">
         </form>
-            
+
         </div>
     </div>
 
 </div>
-    
+
 </div>
 <div id="main">
     <?php
@@ -176,8 +176,8 @@ class GMOTemplate extends QuickTemplate {
 
             if($this->data['sitenotice']) { ?><div id="siteNotice"><?php $this->html('sitenotice') ?></div><?php }
     ?>
-            
-            <div id="wiki-tools">         
+
+            <div id="wiki-tools">
                 <script type="<?php $this->text('jsmimetype') ?>"> if (window.isMSIE55) fixalpha(); </script>
                 <?php foreach ($this->data['sidebar'] as $bar => $cont) {
                 if($bar=='navigation') { ?>
@@ -204,41 +204,41 @@ class GMOTemplate extends QuickTemplate {
                         } ?>
                         </ul>
                     </div>
-                </div>                  
-	            
-	            <div class="portlet" id="p-tb">
-		            <h2><?php $this->msg('toolbox') ?></h2>
-		            <div class="pBody">
-			            <ul>
-					      <?php if($this->data['notspecialpage']) { foreach( array( 'whatlinkshere', 'recentchangeslinked' ) as $special ) { ?>
-					      <li id="t-<?php echo $special?>"><a href="<?php
-					        echo htmlspecialchars($this->data['nav_urls'][$special]['href']) 
-					        ?>"><?php echo $this->msg($special) ?></a></li>
-					      <?php } } ?>
-				          <?php if($this->data['feeds']) { ?><li id="feedlinks"><?php foreach($this->data['feeds'] as $key => $feed) {
-				            ?><span id="feed-<?php echo htmlspecialchars($key) ?>"><a href="<?php
-				            echo htmlspecialchars($feed['href']) ?>"><?php echo htmlspecialchars($feed['text'])?></a>&nbsp;</span>
-				            <?php } ?></li><?php } ?>
-				          <?php foreach( array('contributions', 'emailuser', 'upload', 'specialpages') as $special ) { ?>
-				          <?php if($this->data['nav_urls'][$special]) {?><li id="t-<?php echo $special ?>"><a href="<?php
-				            echo htmlspecialchars($this->data['nav_urls'][$special]['href'])
-				            ?>"><?php $this->msg($special) ?></a></li><?php } ?>
-				          <?php }
-				          wfRunHooks( 'SkinTemplateToolboxEnd', array( &$this ) );
-				          ?>
-					    </ul>
-		            </div>
-	            </div> <?php }} ?>
+                </div>
+
+                <div class="portlet" id="p-tb">
+                    <h2><?php $this->msg('toolbox') ?></h2>
+                    <div class="pBody">
+                        <ul>
+                          <?php if($this->data['notspecialpage']) { foreach( array( 'whatlinkshere', 'recentchangeslinked' ) as $special ) { ?>
+                          <li id="t-<?php echo $special?>"><a href="<?php
+                            echo htmlspecialchars($this->data['nav_urls'][$special]['href'])
+                            ?>"><?php echo $this->msg($special) ?></a></li>
+                          <?php } } ?>
+                          <?php if($this->data['feeds']) { ?><li id="feedlinks"><?php foreach($this->data['feeds'] as $key => $feed) {
+                            ?><span id="feed-<?php echo htmlspecialchars($key) ?>"><a href="<?php
+                            echo htmlspecialchars($feed['href']) ?>"><?php echo htmlspecialchars($feed['text'])?></a>&nbsp;</span>
+                            <?php } ?></li><?php } ?>
+                          <?php foreach( array('contributions', 'emailuser', 'upload', 'specialpages') as $special ) { ?>
+                          <?php if($this->data['nav_urls'][$special]) {?><li id="t-<?php echo $special ?>"><a href="<?php
+                            echo htmlspecialchars($this->data['nav_urls'][$special]['href'])
+                            ?>"><?php $this->msg($special) ?></a></li><?php } ?>
+                          <?php }
+                          wfRunHooks( 'SkinTemplateToolboxEnd', array( &$this ) );
+                          ?>
+                        </ul>
+                    </div>
+                </div> <?php }} ?>
             </div>
-            
-            <div id="main-content"<?php if($menu)print(' class="with-menu"');?>>              
+
+            <div id="main-content"<?php if($menu)print(' class="with-menu"');?>>
                 <h1 id="page-title"><?php print($title);?></h1>
                 <div id="breadcrumbs">
                     <?php
                         if(isset($_SERVER['HTTPS'])) {
                             $protocol = 'https://';
                         } else {$protocol = 'http://';}
-                    
+
                         $this->createBreadcrumbs($protocol); ?>
                 </div>
                 <h3 id="siteSub"><?php $this->msg('tagline') ?></h3>
@@ -259,7 +259,7 @@ class GMOTemplate extends QuickTemplate {
         }
 
         /*************************************************************************************************/
-        
+
         function footer() {
             global $wgStylePath;
     ?>
@@ -270,18 +270,18 @@ class GMOTemplate extends QuickTemplate {
         <div class="footer-icons">
             <?php if($this->data['copyrightico']) { ?><div id="f-copyrightico"><?php $this->html('copyrightico') ?></div> <?php } ?>
             <?php if($this->data['poweredbyico']) { ?><div id="f-poweredbyico"><?php $this->html('poweredbyico') ?></div> <?php } ?>
-        </div>       
+        </div>
         <div class="col-span">
             <?php if($this->data['lastmod'   ]) { ?><span id="f-lastmod">  <?php $this->html('lastmod')   ?></span><?php } ?>
             <?php if($this->data['viewcount' ]) { ?><span id="f-viewcount"><?php $this->html('viewcount') ?></span><?php } ?>
             <?php if($this->data['copyright' ]) { ?><p    id="f-copyright"><?php $this->html('copyright') ?></p>   <?php } ?>
-        </div>       
+        </div>
     </div><!-- end #footer -->
 </div>
 
 <?php
     }
-    
+
     /*************************************************************************************************/
     function menu($toc) {
 ?>
@@ -306,55 +306,55 @@ class GMOTemplate extends QuickTemplate {
 </div>
 <?php
     }
-    
+
     function createBreadcrumbs($protocol) {
         $str = $protocol.$_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"];
         $query = parse_url($str, PHP_URL_QUERY);
         parse_str($query, $search_params);
-        
+
         $pieces = explode("/", $_SERVER['REQUEST_URI']);
         unset($pieces[0]); /* remove the first (empty item) from the array) */
         $last_piece = end($pieces); /* define a last item in the array */
-        
-        /* define url pieces we don't want displayed in breadcrumbs 
+
+        /* define url pieces we don't want displayed in breadcrumbs
            breadcrumb parts will be made of url parts again made by exploding url with `slash`
-           when items in this array are inside breadrumb, we'll strip it and update breadcrumb        
+           when items in this array are inside breadrumb, we'll strip it and update breadcrumb
         */
-        
+
         $unwanted = array(0 => 'index.php?title=', 1 => '&action=edit', 2 => '&redlink=1');
-        
+
         /* create base url */
-        
-        $base_url = $protocol;        
+
+        $base_url = $protocol;
         $base_url .= $_SERVER['SERVER_NAME'];
-        $base_url = htmlspecialchars($base_url, ENT_QUOTES);
+        $base_url = htmlspecialchars($base_url, ENT_QUOTES, UTF-8);
         $item_url = $base_url;
         echo "<a href=\"" . $base_url .  "\">Home</a>";
         foreach($pieces as $part) {
-            /* check if there's unwanted url part */    
+            /* check if there's unwanted url part */
             foreach($unwanted as $bogus_part) {
                 $pos = strpos($part, $bogus_part);
                 if($pos !== false) {
                     $part = str_replace($bogus_part, '', $part);
                 }
-            
+
             }
-            $part = htmlspecialchars($part, ENT_QUOTES);
+            $part = htmlspecialchars($part, ENT_QUOTES, UTF-8);
             $item_url .= "/" . $part;
             if(strpos($part, 'search=') !== false) {
                 $item_url = html_entity_decode($item_url);
-                $_params = htmlspecialchars($search_params['search'], ENT_QUOTES);
+                $_params = htmlspecialchars($search_params['search'], ENT_QUOTES, UTF-8);
                 echo "&nbsp;&raquo;&nbsp;<a href=\"$item_url\"> Search: " . $_params . "</a>";
             } else {
-                $item_url = htmlspecialchars($item_url, ENT_QUOTES);
+                $item_url = htmlspecialchars($item_url, ENT_QUOTES, UTF-8);
                 echo "&nbsp;&raquo;&nbsp;<a href=\"$item_url\">" . $part . "</a>";
             }
-            
+
         }
-  
-    
+
+
     }
-    
+
 } // end of class
 
 
