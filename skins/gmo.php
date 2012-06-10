@@ -309,49 +309,49 @@ class GMOTemplate extends QuickTemplate {
     function createBreadcrumbs($protocol) {
 
         function urlRawDecode($raw_url_encoded) {
-        # Hex conversion table
-        $hex_table = array(
-            0 => 0x00,
-            1 => 0x01,
-            2 => 0x02,
-            3 => 0x03,
-            4 => 0x04,
-            5 => 0x05,
-            6 => 0x06,
-            7 => 0x07,
-            8 => 0x08,
-            9 => 0x09,
-            "A"=> 0x0a,
-            "B"=> 0x0b,
-            "C"=> 0x0c,
-            "D"=> 0x0d,
-            "E"=> 0x0e,
-            "F"=> 0x0f
-        );
+            # Hex conversion table
+            $hex_table = array(
+                0 => 0x00,
+                1 => 0x01,
+                2 => 0x02,
+                3 => 0x03,
+                4 => 0x04,
+                5 => 0x05,
+                6 => 0x06,
+                7 => 0x07,
+                8 => 0x08,
+                9 => 0x09,
+                'A'=> 0x0a,
+                'B'=> 0x0b,
+                'C'=> 0x0c,
+                'D'=> 0x0d,
+                'E'=> 0x0e,
+                'F'=> 0x0f
+            );
 
-        # Fixin' latin character problem
-            if(preg_match_all("/\%C3\%([A-Z0-9]{2})/i", $raw_url_encoded,$res))
-            {
+            # Fixin' latin character problem
+            if(preg_match_all("/\%C3\%([A-Z0-9]{2})/i", $raw_url_encoded,$res)) {
                 $res = array_unique($res = $res[1]);
                 $arr_unicoded = array();
-                foreach($res as $key => $value){
+                foreach($res as $key => $value) {
                     $arr_unicoded[] = chr(
                             (0xc0 | ($hex_table[substr($value,0,1)]<<4))
                            | (0x03 & $hex_table[substr($value,1,1)])
                     );
-                    $res[$key] = "%C3%" . $value;
+                    $res[$key] = '%C3%' . $value;
                 }
 
                 $raw_url_encoded = str_replace(
                                         $res,
                                         $arr_unicoded,
                                         $raw_url_encoded
-                            );
+                );
             }
 
-            # Return decoded  raw url encoded data
-            return rawurldecode($raw_url_encoded);
-    }
+            # Return decoded  raw url encoded data in utf8
+            return rawurldecode(utf8_encode($raw_url_encoded));
+        }
+
         $str = $protocol.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
         $query = parse_url($str, PHP_URL_QUERY);
         parse_str($query, $search_params);
@@ -371,7 +371,7 @@ class GMOTemplate extends QuickTemplate {
 
         $base_url = $protocol;
         $base_url .= $_SERVER['SERVER_NAME'];
-        $base_url = htmlspecialchars($base_url, ENT_QUOTES, 'UTF-8');
+        $base_url = htmlspecialchars($base_url, ENT_QUOTES);
         $item_url = $base_url;
         echo "<a href=\"" . $base_url .  "\">Accueil</a>";
         foreach($pieces as $part) {
@@ -383,14 +383,14 @@ class GMOTemplate extends QuickTemplate {
                 }
 
             }
-            $part = htmlspecialchars($part, ENT_QUOTES, 'UTF-8');
+            $part = htmlspecialchars($part, ENT_QUOTES);
             $item_url .= "/" . $part;
             if(strpos($part, 'search=') !== false) {
                 $item_url = html_entity_decode($item_url);
-                $_params = htmlspecialchars($search_params['search'], ENT_QUOTES, 'UTF-8');
+                $_params = htmlspecialchars($search_params['search'], ENT_QUOTES);
                 echo "&nbsp;&raquo;&nbsp;<a href=\"$item_url\"> Recherche: " . urlRawDecode($_params) . "</a>";
             } else {
-                $item_url = htmlspecialchars($item_url, ENT_QUOTES, 'UTF-8');
+                $item_url = htmlspecialchars($item_url, ENT_QUOTES);
                 echo "&nbsp;&raquo;&nbsp;<a href=\"$item_url\">" . urlRawDecode($part) . "</a>";
             }
 
