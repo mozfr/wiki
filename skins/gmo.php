@@ -352,11 +352,11 @@ function urlRawDecode($raw_url_encoded) {
     }
 
     function createBreadcrumbs($protocol) {
-        $str = $protocol.$_SERVER['SERVER_NAME'].urlRawDecode($_SERVER['REQUEST_URI']);
+        $str = $protocol.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
         $query = parse_url($str, PHP_URL_QUERY);
         parse_str($query, $search_params);
 
-        $pieces = explode("/", urlRawDecode($_SERVER['REQUEST_URI']));
+        $pieces = explode('/', urlRawDecode($_SERVER['REQUEST_URI']));
         unset($pieces[0]); /* remove the first (empty item) from the array) */
         $last_piece = end($pieces); /* define a last item in the array */
 
