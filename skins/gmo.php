@@ -356,7 +356,7 @@ function urlRawDecode($raw_url_encoded) {
         $query = parse_url($str, PHP_URL_QUERY);
         parse_str($query, $search_params);
 
-        $pieces = explode('/', urlRawDecode($_SERVER['REQUEST_URI']));
+        $pieces = explode('/', $_SERVER['REQUEST_URI']);
         unset($pieces[0]); /* remove the first (empty item) from the array) */
         $last_piece = end($pieces); /* define a last item in the array */
 
@@ -373,7 +373,7 @@ function urlRawDecode($raw_url_encoded) {
         $base_url .= $_SERVER['SERVER_NAME'];
         $base_url = htmlspecialchars($base_url, ENT_QUOTES, 'UTF-8');
         $item_url = $base_url;
-        echo "<a href=\"" . $base_url .  "\">Home</a>";
+        echo "<a href=\"" . $base_url .  "\">Accueil</a>";
         foreach($pieces as $part) {
             /* check if there's unwanted url part */
             foreach($unwanted as $bogus_part) {
@@ -388,10 +388,10 @@ function urlRawDecode($raw_url_encoded) {
             if(strpos($part, 'search=') !== false) {
                 $item_url = html_entity_decode($item_url);
                 $_params = htmlspecialchars($search_params['search'], ENT_QUOTES, 'UTF-8');
-                echo "&nbsp;&raquo;&nbsp;<a href=\"$item_url\"> Search: " . $_params . "</a>";
+                echo "&nbsp;&raquo;&nbsp;<a href=\"$item_url\"> Recherche: " . urlRawDecode($_params) . "</a>";
             } else {
                 $item_url = htmlspecialchars($item_url, ENT_QUOTES, 'UTF-8');
-                echo "&nbsp;&raquo;&nbsp;<a href=\"$item_url\">" . $part . "</a>";
+                echo "&nbsp;&raquo;&nbsp;<a href=\"$item_url\">" . urlRawDecode($part) . "</a>";
             }
 
         }
