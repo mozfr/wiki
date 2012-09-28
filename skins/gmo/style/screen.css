@@ -77,7 +77,7 @@ ul li{padding-left:5px;}
 #toc {background-color: #F9F9F9; border: 1px solid #AAAAAA; padding: 0 5px;}
 #toc ul {list-style-image: none; list-style-type: none;margin-left: 5px;}
 dl{margin-bottom:1em;}
-dt{text-transform:uppercase;font-weight:bold;}
+dt{font-weight:bold;}
 dd{margin:0 0 0.5em 0.5em;}
 h1, h2, h3, h4, h5, h6{color:#2a2a2a;font-family:MetaBold, Trebuchet MS, sans-serif;font-weight:bold;}
 h1{font-size:35px;margin:5px 0;color:#b91e27;}
