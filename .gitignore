@@ -1,6 +1,7 @@
 .svn
 ./bin
 ./languages
+./images
 ./maintenance
 ./mw-config
 ./tests
