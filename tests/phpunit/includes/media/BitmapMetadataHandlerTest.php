@@ -2,7 +2,7 @@
 class BitmapMetadataHandlerTest extends MediaWikiTestCase {
 
 	public function setUp() {
-		$this->filePath = dirname( __FILE__ ) . '/../../data/media/';
+		$this->filePath = __DIR__ . '/../../data/media/';
 	}
 
 	/**
@@ -14,10 +14,15 @@ class BitmapMetadataHandlerTest extends MediaWikiTestCase {
 	 * translation (to en) where XMP should win.
 	 */
 	public function testMultilingualCascade() {
-		global $wgShowEXIF;
-		if ( !$wgShowEXIF ) {
-			$this->markTestIncomplete( "This test needs the exif extension." );
+		if ( !wfDl( 'exif' ) ) {
+			$this->markTestSkipped( "This test needs the exif extension." );
 		}
+		if ( !wfDl( 'xml' ) ) {
+			$this->markTestSkipped( "This test needs the xml extension." );
+		}
+		global $wgShowEXIF;
+		$oldExif = $wgShowEXIF;
+		$wgShowEXIF = true;
 
 		$meta = BitmapMetadataHandler::Jpeg( $this->filePath .
 			'/Xmp-exif-multilingual_test.jpg' );
@@ -32,6 +37,8 @@ class BitmapMetadataHandlerTest extends MediaWikiTestCase {
 			'Did not extract any ImageDescription info?!' );
 
 		$this->assertEquals( $expected, $meta['ImageDescription'] );
+
+		$wgShowEXIF = $oldExif;
 	}
 
 	/**
@@ -49,6 +56,16 @@ class BitmapMetadataHandlerTest extends MediaWikiTestCase {
 			$meta['JPEGFileComment'][0] );
 	}
 
+	/**
+	 * Make sure a bad iptc block doesn't stop the other metadata
+	 * from being extracted.
+	 */
+	public function testBadIPTC() {
+		$meta = BitmapMetadataHandler::Jpeg( $this->filePath .
+			'iptc-invalid-psir.jpg' );
+		$this->assertEquals( 'Created with GIMP', $meta['JPEGFileComment'][0] );
+	}
+
 	public function testIPTCDates() {
 		$meta = BitmapMetadataHandler::Jpeg( $this->filePath .
 			'iptc-timetest.jpg' );
@@ -56,7 +73,8 @@ class BitmapMetadataHandlerTest extends MediaWikiTestCase {
 		$this->assertEquals( '2020:07:14 01:36:05', $meta['DateTimeDigitized'] );
 		$this->assertEquals( '1997:03:02 00:01:02', $meta['DateTimeOriginal'] );
 	}
-	/* File has an invalid time (+ one valid but really weird time)
+	/**
+	 * File has an invalid time (+ one valid but really weird time)
 	 * that shouldn't be included
 	 */
 	public function testIPTCDatesInvalid() {
@@ -95,6 +113,9 @@ class BitmapMetadataHandlerTest extends MediaWikiTestCase {
 	}
 
 	public function testPNGXMP() {
+		if ( !wfDl( 'xml' ) ) {
+			$this->markTestSkipped( "This test needs the xml extension." );
+		}
 		$handler = new BitmapMetadataHandler();
 		$result = $handler->png( $this->filePath . 'xmp.png' );
 		$expected = array (

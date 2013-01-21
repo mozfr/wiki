@@ -2,7 +2,7 @@
 class GIFMetadataExtractorTest extends MediaWikiTestCase {
 
 	public function setUp() {
-		$this->mediaPath = dirname( __FILE__ ) . '/../../data/media/';
+		$this->mediaPath = __DIR__ . '/../../data/media/';
 	}
 	/**
 	 * Put in a file, and see if the metadata coming out is as expected.
@@ -63,6 +63,7 @@ class GIFMetadataExtractorTest extends MediaWikiTestCase {
                                                                                                     
 <?xpacket end='w'?>
 EOF;
+		$xmpNugget = str_replace( "\r", '', $xmpNugget ); // Windows compat
 
 		return array(
 			array( 'nonanimated.gif', array(

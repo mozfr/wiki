@@ -19,6 +19,7 @@ class MockDatabaseSqlite extends DatabaseSqliteStandalone {
 
 /**
  * @group sqlite
+ * @group Database
  */
 class DatabaseSqliteTest extends MediaWikiTestCase {
 	var $db;
@@ -98,7 +99,7 @@ class DatabaseSqliteTest extends MediaWikiTestCase {
 		$this->assertEquals( 'sqlite_master', $db->tableName( 'sqlite_master' ) );
 		$this->assertEquals( 'foobar', $db->tableName( 'bar' ) );
 	}
-	
+
 	public function testDuplicateTableStructure() {
 		$db = new DatabaseSqliteStandalone( ':memory:' );
 		$db->query( 'CREATE TABLE foo(foo, barfoo)' );
@@ -119,7 +120,7 @@ class DatabaseSqliteTest extends MediaWikiTestCase {
 			'Create a temporary duplicate only'
 		);
 	}
-	
+
 	public function testDuplicateTableStructureVirtual() {
 		$db = new DatabaseSqliteStandalone( ':memory:' );
 		if ( $db->getFulltextSearchModule() != 'FTS3' ) {
@@ -191,13 +192,14 @@ class DatabaseSqliteTest extends MediaWikiTestCase {
 			'1.15',
 			'1.16',
 			'1.17',
+			'1.18',
 		);
 
 		// Mismatches for these columns we can safely ignore
 		$ignoredColumns = array(
 			'user_newtalk.user_last_timestamp', // r84185
 		);
-			
+
 		$currentDB = new DatabaseSqliteStandalone( ':memory:' );
 		$currentDB->sourceFile( "$IP/maintenance/tables.sql" );
 		$currentTables = $this->getTables( $currentDB );
@@ -248,15 +250,26 @@ class DatabaseSqliteTest extends MediaWikiTestCase {
 		}
 	}
 
+	public function testInsertIdType() {
+		$db = new DatabaseSqliteStandalone( ':memory:' );
+		$this->assertInstanceOf( 'ResultWrapper',
+			$db->query( 'CREATE TABLE a ( a_1 )', __METHOD__ ), "Database creationg" );
+		$this->assertTrue( $db->insert( 'a', array( 'a_1' => 10 ), __METHOD__ ),
+			"Insertion worked" );
+		$this->assertEquals( "integer", gettype( $db->insertId() ), "Actual typecheck" );
+		$this->assertTrue( $db->close(), "closing database" );
+	}
+
 	private function prepareDB( $version ) {
 		static $maint = null;
 		if ( $maint === null ) {
 			$maint = new FakeMaintenance();
 			$maint->loadParamsAndArgs( null, array( 'quiet' => 1 ) );
 		}
-		
+
+		global $IP;
 		$db = new DatabaseSqliteStandalone( ':memory:' );
-		$db->sourceFile( dirname( __FILE__ ) . "/sqlite/tables-$version.sql" );
+		$db->sourceFile( "$IP/tests/phpunit/data/db/sqlite/tables-$version.sql" );
 		$updater = DatabaseUpdater::newForDB( $db, false, $maint );
 		$updater->doUpdates( array( 'core' ) );
 		return $db;
@@ -266,6 +279,7 @@ class DatabaseSqliteTest extends MediaWikiTestCase {
 		$list = array_flip( $db->listTables() );
 		$excluded = array(
 			'math', // moved out of core in 1.18
+			'trackbacks', // removed from core in 1.19
 			'searchindex',
 			'searchindex_content',
 			'searchindex_segments',

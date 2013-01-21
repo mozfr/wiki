@@ -1,6 +1,12 @@
 <?php
 class XMPTest extends MediaWikiTestCase {
 
+	function setUp() {
+		if ( !wfDl( 'xml' ) ) {
+			$this->markTestSkipped( 'Requires libxml to do XMP parsing' );
+		}
+	}
+
 	/**
 	 * Put XMP in, compare what comes out...
 	 *
@@ -11,19 +17,16 @@ class XMPTest extends MediaWikiTestCase {
 	 * @dataProvider dataXMPParse
 	 */
 	public function testXMPParse( $xmp, $expected, $info ) {
-		if ( !function_exists( 'xml_parser_create_ns' ) ) {
-			$this->markIncomplete( 'Requires libxml to do XMP parsing' );
-		}
 		if ( !is_string( $xmp ) || !is_array( $expected ) ) {
 			throw new Exception( "Invalid data provided to " . __METHOD__ );
 		}
 		$reader = new XMPReader;
 		$reader->parse( $xmp );
-		$this->assertEquals( $expected, $reader->getResults(), $info );
+		$this->assertEquals( $expected, $reader->getResults(), $info, 0.0000000001 );
 	}
 
 	public function dataXMPParse() {
-		$xmpPath = dirname( __FILE__ ) . '/../../data/xmp/' ;
+		$xmpPath = __DIR__ . '/../../data/xmp/' ;
 		$data = array();
 
 		// $xmpFiles format: array of arrays with first arg file base name,
@@ -49,6 +52,7 @@ class XMPTest extends MediaWikiTestCase {
 			array( 'utf32BE', 'UTF-32BE encoding' ),
 			array( 'utf32LE', 'UTF-32LE encoding' ),
 			array( 'xmpExt', 'Extended XMP missing second part' ),
+			array( 'gps', 'Handling of exif GPS parameters in XMP' ),
 		 );
 		foreach( $xmpFiles as $file ) {
 			$xmp = file_get_contents( $xmpPath . $file[0] . '.xmp' );
@@ -69,7 +73,7 @@ class XMPTest extends MediaWikiTestCase {
 	 * world example file to double check the support for this is right.
 	 */
 	function testExtendedXMP() {
-		$xmpPath = dirname( __FILE__ ) . '/../../data/xmp/';
+		$xmpPath = __DIR__ . '/../../data/xmp/';
 		$standardXMP = file_get_contents( $xmpPath . 'xmpExt.xmp' );
 		$extendedXMP = file_get_contents( $xmpPath . 'xmpExt2.xmp' );
 
@@ -99,7 +103,7 @@ class XMPTest extends MediaWikiTestCase {
 	 * and thus should only return the StandardXMP, not the ExtendedXMP.
 	 */
 	function testExtendedXMPWithWrongGUID() {
-		$xmpPath = dirname( __FILE__ ) . '/../../data/xmp/';
+		$xmpPath = __DIR__ . '/../../data/xmp/';
 		$standardXMP = file_get_contents( $xmpPath . 'xmpExt.xmp' );
 		$extendedXMP = file_get_contents( $xmpPath . 'xmpExt2.xmp' );
 
@@ -127,7 +131,7 @@ class XMPTest extends MediaWikiTestCase {
 	 * which should cause it to ignore the ExtendedXMP packet.
 	 */
 	function testExtendedXMPMissingPacket() {
-		$xmpPath = dirname( __FILE__ ) . '/../../data/xmp/';
+		$xmpPath = __DIR__ . '/../../data/xmp/';
 		$standardXMP = file_get_contents( $xmpPath . 'xmpExt.xmp' );
 		$extendedXMP = file_get_contents( $xmpPath . 'xmpExt2.xmp' );
 

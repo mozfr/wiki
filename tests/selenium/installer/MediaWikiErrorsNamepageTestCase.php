@@ -27,13 +27,13 @@
  *
  */
 
-/*
+/**
  * Test Case ID   : 10 (http://www.mediawiki.org/wiki/New_installer/Test_plan)
  * Test Case Name : Invalid/ blank values for fields in 'Name' page.
  * Version        : MediaWiki 1.18alpha
 */
 
-require_once ( dirname( __FILE__ ) . '/MediaWikiInstallationCommonFunction.php' );
+require_once ( __DIR__ . '/MediaWikiInstallationCommonFunction.php' );
 
 class MediaWikiErrorsNamepageTestCase extends MediaWikiInstallationCommonFunction {
 

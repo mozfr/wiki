@@ -16,6 +16,8 @@ class MessageTest extends MediaWikiLangTestCase {
 		$this->assertInstanceOf( 'Message', wfMessage( 'i-dont-exist-evar' ) );
 		$this->assertEquals( 'Main Page', wfMessage( 'mainpage' )->text() );
 		$this->assertEquals( '&lt;i-dont-exist-evar&gt;', wfMessage( 'i-dont-exist-evar' )->text() );
+		$this->assertEquals( '<i-dont-exist-evar>', wfMessage( 'i-dont-exist-evar' )->plain() );
+		$this->assertEquals( '&lt;i-dont-exist-evar&gt;', wfMessage( 'i-dont-exist-evar' )->escaped() );
 	}
 
 	function testInLanguage() {
@@ -47,7 +49,7 @@ class MessageTest extends MediaWikiLangTestCase {
 		$this->assertEquals( 'Main Page', wfMessage( 'mainpage' )->inContentLanguage()->plain(), 'ForceUIMsg disabled' );
 		$wgForceUIMsgAsContentMsg['testInContentLanguage'] = 'mainpage';
 		$this->assertEquals( 'Accueil', wfMessage( 'mainpage' )->inContentLanguage()->plain(), 'ForceUIMsg enabled' );
-		
+
 		/* Restore globals */
 		$wgLang = $oldLang;
 		unset( $wgForceUIMsgAsContentMsg['testInContentLanguage'] );

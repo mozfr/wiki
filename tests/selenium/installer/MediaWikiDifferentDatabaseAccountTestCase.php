@@ -28,9 +28,9 @@
  */
 
 
-require_once ( dirname( __FILE__ ) . '/MediaWikiInstallationCommonFunction.php' );
+require_once ( __DIR__ . '/MediaWikiInstallationCommonFunction.php' );
 
-/*
+/**
  * Test Case ID   : 04 (http://www.mediawiki.org/wiki/New_installer/Test_plan)
  * Test Case Name : Install MediaWiki with different Database accounts for web access.
  * Version        : MediaWiki 1.18alpha

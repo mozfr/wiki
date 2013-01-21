@@ -2,19 +2,43 @@
 
 class XmlTest extends MediaWikiTestCase {
 	private static $oldLang;
+	private static $oldNamespaces;
 
 	public function setUp() {
-		global $wgLang, $wgLanguageCode;
-		
+		global $wgLang, $wgContLang;
+
 		self::$oldLang = $wgLang;
-		$wgLanguageCode = 'en';
-		$wgLang = Language::factory( $wgLanguageCode );
+		$wgLang = Language::factory( 'en' );
+
+		// Hardcode namespaces during test runs,
+		// so that html output based on existing namespaces
+		// can be properly evaluated.
+		self::$oldNamespaces = $wgContLang->getNamespaces();
+		$wgContLang->setNamespaces( array(
+			-2 => 'Media',
+			-1 => 'Special',
+			0  => '',
+			1  => 'Talk',
+			2  => 'User',
+			3  => 'User_talk',
+			4  => 'MyWiki',
+			5  => 'MyWiki_Talk',
+			6  => 'File',
+			7  => 'File_talk',
+			8  => 'MediaWiki',
+			9  => 'MediaWiki_talk',
+			10  => 'Template',
+			11  => 'Template_talk',
+			100  => 'Custom',
+			101  => 'Custom_talk',
+		) );
 	}
-	
+
 	public function tearDown() {
-		global $wgLang, $wgLanguageCode;
+		global $wgLang, $wgContLang;
 		$wgLang = self::$oldLang;
-		$wgLanguageCode = $wgLang->getCode();
+		
+		$wgContLang->setNamespaces( self::$oldNamespaces );
 	}
 
 	public function testExpandAttributes() {
@@ -88,6 +112,9 @@ class XmlTest extends MediaWikiTestCase {
 		$this->assertEquals( '</element>', Xml::closeElement( 'element' ), 'closeElement() shortcut' );
 	}
 
+	/**
+	 * @group Broken
+	 */
 	public function testDateMenu( ) {
 		$curYear   = intval(gmdate('Y'));
 		$prevYear  = $curYear - 1;
@@ -98,11 +125,10 @@ class XmlTest extends MediaWikiTestCase {
 		$nextMonth = $curMonth + 1;
 		if( $nextMonth == 13 ) { $nextMonth = 1; }
 
-
 		$this->assertEquals(
 			'<label for="year">From year (and earlier):</label> <input name="year" size="4" value="2011" id="year" maxlength="4" /> <label for="month">From month (and earlier):</label> <select id="month" name="month" class="mw-month-selector"><option value="-1">all</option>' . "\n" .
 '<option value="1">January</option>' . "\n" .
-'<option value="2" selected="selected">February</option>' . "\n" .
+'<option value="2" selected="">February</option>' . "\n" .
 '<option value="3">March</option>' . "\n" .
 '<option value="4">April</option>' . "\n" .
 '<option value="5">May</option>' . "\n" .
@@ -139,7 +165,6 @@ class XmlTest extends MediaWikiTestCase {
 			"Date menu year is the current one when not specified"
 		);
 
-		$this->markTestIncomplete( "Broken" );
 		// @todo FIXME: next month can be in the next year
 		// test failing because it is now december
 		$this->assertEquals(
@@ -163,7 +188,7 @@ class XmlTest extends MediaWikiTestCase {
 '<option value="10">October</option>' . "\n" .
 '<option value="11">November</option>' . "\n" .
 '<option value="12">December</option></select>',
-			Xml::dateMenu( '', ''),
+			Xml::dateMenu( '', '' ),
 			"Date menu with neither year or month"
 		);
 	}
@@ -226,6 +251,15 @@ class XmlTest extends MediaWikiTestCase {
 		);
 	}
 
+	function testLanguageSelector() {
+		$select = Xml::languageSelector( 'en', true, null,
+			array( 'id' => 'testlang' ), wfMessage( 'yourlanguage' ) );
+		$this->assertEquals(
+			'<label for="testlang">Language:</label>',
+			$select[0]
+		);
+	}
+
 	#
 	# JS
 	#
@@ -255,12 +289,12 @@ class XmlTest extends MediaWikiTestCase {
 
 	function testEncodeJsVarArray() {
 		$this->assertEquals(
-			'["a", 1]',
+			'["a",1]',
 			Xml::encodeJsVar( array( 'a', 1 ) ),
 			'encodeJsVar() with array'
 		);
 		$this->assertEquals(
-			'{"a": "a", "b": 1}',
+			'{"a":"a","b":1}',
 			Xml::encodeJsVar( array( 'a' => 'a', 'b' => 1 ) ),
 			'encodeJsVar() with associative array'
 		);
@@ -268,7 +302,7 @@ class XmlTest extends MediaWikiTestCase {
 
 	function testEncodeJsVarObject() {
 		$this->assertEquals(
-			'{"a": "a", "b": 1}',
+			'{"a":"a","b":1}',
 			Xml::encodeJsVar( (object)array( 'a' => 'a', 'b' => 1 ) ),
 			'encodeJsVar() with object'
 		);

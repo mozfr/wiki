@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * @group API
  * @group Database
  */
 class ApiQueryTest extends ApiTestCase {
@@ -22,10 +23,13 @@ class ApiQueryTest extends ApiTestCase {
 		$this->assertArrayHasKey( 'query', $data[0] );
 		$this->assertArrayHasKey( 'normalized', $data[0]['query'] );
 
+		// Forge a normalized title
+		$to = Title::newFromText( $wgMetaNamespace.':ArticleA' );
+
 		$this->assertEquals(
 			array(
 				'from' => 'Project:articleA',
-				'to' => $wgMetaNamespace . ':ArticleA'
+				'to' => $to->getPrefixedText(),
 			),
 			$data[0]['query']['normalized'][0]
 		);
@@ -50,7 +54,6 @@ class ApiQueryTest extends ApiTestCase {
 			'action' => 'query',
 			'titles' => $title . '|Talk:' ) );
 
-
 		$this->assertArrayHasKey( 'query', $data[0] );
 		$this->assertArrayHasKey( 'pages', $data[0]['query'] );
 		$this->assertEquals( 2, count( $data[0]['query']['pages'] ) );
@@ -60,8 +63,6 @@ class ApiQueryTest extends ApiTestCase {
 
 		$this->assertArrayHasKey( 'missing', $data[0]['query']['pages'][-2] );
 		$this->assertArrayHasKey( 'invalid', $data[0]['query']['pages'][-1] );
-
-
 	}
 
 }

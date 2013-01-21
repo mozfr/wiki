@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * @group API
  * @group Database
  */
 class ApiBlockTest extends ApiTestCase {
@@ -15,24 +16,32 @@ class ApiBlockTest extends ApiTestCase {
 	}
 
 	function addDBData() {
-		$user = User::newFromName( 'UTBlockee' );
+		$user = User::newFromName( 'UTApiBlockee' );
 
 		if ( $user->getId() == 0 ) {
 			$user->addToDatabase();
-			$user->setPassword( 'UTBlockeePassword' );
+			$user->setPassword( 'UTApiBlockeePassword' );
 
 			$user->saveSettings();
 		}
 	}
 
+	/**
+	 * This test has probably always been broken and use an invalid token
+	 * Bug tracking brokenness is https://bugzilla.wikimedia.org/35646
+	 *
+	 * Root cause is https://gerrit.wikimedia.org/r/3434
+	 * Which made the Block/Unblock API to actually verify the token
+	 * previously always considered valid (bug 34212).
+	 */
 	function testMakeNormalBlock() {
 
 		$data = $this->getTokens();
 
-		$user = User::newFromName( 'UTBlockee' );
+		$user = User::newFromName( 'UTApiBlockee' );
 
 		if ( !$user->getId() ) {
-			$this->markTestIncomplete( "The user UTBlockee does not exist" );
+			$this->markTestIncomplete( "The user UTApiBlockee does not exist" );
 		}
 
 		if( !isset( $data[0]['query']['pages'] ) ) {
@@ -45,18 +54,64 @@ class ApiBlockTest extends ApiTestCase {
 
 		$data = $this->doApiRequest( array(
 			'action' => 'block',
-			'user' => 'UTBlockee',
-			'reason' => BlockTest::REASON,
-			'token' => $pageinfo['blocktoken'] ), $data );
+			'user' => 'UTApiBlockee',
+			'reason' => 'Some reason',
+			'token' => $pageinfo['blocktoken'] ), null, false, self::$users['sysop']->user );
 
-		$block = Block::newFromTarget('UTBlockee');
+		$block = Block::newFromTarget('UTApiBlockee');
 
 		$this->assertTrue( !is_null( $block ), 'Block is valid' );
 
-		$this->assertEquals( 'UTBlockee', (string)$block->getTarget() );
+		$this->assertEquals( 'UTApiBlockee', (string)$block->getTarget() );
 		$this->assertEquals( 'Some reason', $block->mReason );
 		$this->assertEquals( 'infinity', $block->mExpiry );
 
 	}
 
+	/**
+	 * @dataProvider provideBlockUnblockAction
+	 */
+	function testGetTokenUsingABlockingAction( $action ) {
+		$data = $this->doApiRequest(
+			array(
+				'action' => $action,
+				'user' => 'UTApiBlockee',
+				'gettoken' => '' ),
+			null,
+			false,
+			self::$users['sysop']->user
+		);
+		$this->assertEquals( 34, strlen( $data[0][$action]["{$action}token"] ) );
+	}
+
+	/**
+	 * Attempting to block without a token should give a UsageException with
+	 * error message:
+	 *   "The token parameter must be set"
+	 *
+	 * @dataProvider provideBlockUnblockAction
+	 * @expectedException UsageException
+	 */
+	function testBlockingActionWithNoToken( $action ) {
+		$this->doApiRequest(
+			array(
+				'action' => $action,
+				'user' => 'UTApiBlockee',
+				'reason' => 'Some reason',
+				),
+			null,
+			false,
+			self::$users['sysop']->user
+		);
+	}
+
+	/**
+	 * Just provide the 'block' and 'unblock' action to test both API calls
+	 */
+	function provideBlockUnblockAction() {
+		return array(
+			array( 'block'   ),
+			array( 'unblock' ),
+		);
+	}
 }

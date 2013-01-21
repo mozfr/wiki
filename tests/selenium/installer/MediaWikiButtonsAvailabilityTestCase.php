@@ -28,9 +28,9 @@
  */
 
 
-require_once (dirname(__FILE__).'/'.'MediaWikiInstallationCommonFunction.php');
+require_once (__DIR__.'/'.'MediaWikiInstallationCommonFunction.php');
 
-/*
+/**
  * Test Case ID   : 30 (http://www.mediawiki.org/wiki/New_installer/Test_plan)
  * Test Case Name :'Back' and 'Continue' button availability
  * Version        : MediaWiki 1.18alpha

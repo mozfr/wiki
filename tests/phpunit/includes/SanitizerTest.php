@@ -109,5 +109,54 @@ class SanitizerTest extends MediaWikiTestCase {
 		$this->assertEquals( Sanitizer::decodeTagAttributes( 'foo=&amp;&quot;' ), array( 'foo' => '&"' ), 'Special chars can be provided as entities' );
 		$this->assertEquals( Sanitizer::decodeTagAttributes( 'foo=&foobar;' ), array( 'foo' => '&foobar;' ), 'Entity-like items are accepted' );
 	}
+
+	/**
+	 * @dataProvider provideDeprecatedAttributes
+	 */
+	function testDeprecatedAttributesUnaltered( $inputAttr, $inputEl ) {
+		$this->assertEquals( " $inputAttr", Sanitizer::fixTagAttributes( $inputAttr, $inputEl ) );
+	}
+
+	public static function provideDeprecatedAttributes() {
+		return array(
+			array( 'clear="left"', 'br' ),
+			array( 'clear="all"', 'br' ),
+			array( 'width="100"', 'td' ),
+			array( 'nowrap="true"', 'td' ),
+			array( 'nowrap=""', 'td' ),
+			array( 'align="right"', 'td' ),
+			array( 'align="center"', 'table' ),
+			array( 'align="left"', 'tr' ),
+			array( 'align="center"', 'div' ),
+			array( 'align="left"', 'h1' ),
+			array( 'align="left"', 'span' ),
+		);
+	}
+
+	/**
+	 * @dataProvider provideCssCommentsFixtures
+	 */
+	function testCssCommentsChecking( $expected, $css, $message = '' ) {
+		$this->assertEquals(
+			$expected,
+			Sanitizer::checkCss( $css ),
+			$message
+		);
+	}
+
+	function provideCssCommentsFixtures() {
+		/** array( <expected>, <css>, [message] ) */
+		return array(
+			array( ' ', '/**/' ),
+			array( ' ', '/****/' ),
+			array( ' ', '/* comment */' ),
+			array( ' ', "\\2f\\2a foo \\2a\\2f",
+				'Backslash-escaped comments must be stripped (bug 28450)' ),
+			array( '', '/* unfinished comment structure',
+	 			'Remove anything after a comment-start token' ),
+			array( '', "\\2f\\2a unifinished comment'",
+	 			'Remove anything after a backslash-escaped comment-start token' ),
+		);
+	}
 }
 
