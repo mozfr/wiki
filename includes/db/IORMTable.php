@@ -23,12 +23,11 @@
  * @file
  * @ingroup ORM
  *
- * @licence GNU GPL v2 or later
+ * @license GNU GPL v2 or later
  * @author Jeroen De Dauw < jeroendedauw@gmail.com >
  */
 
 interface IORMTable {
-
 	/**
 	 * Returns the name of the database table objects of this type are stored in.
 	 *
@@ -63,8 +62,9 @@ interface IORMTable {
 	 * * array
 	 * * blob
 	 *
-	 * TODO: get rid of the id field. Every row instance needs to have
-	 * one so this is just causing hassle at various locations by requiring an extra check for field name.
+	 * @todo Get rid of the id field. Every row instance needs to have one so
+	 *   this is just causing hassle at various locations by requiring an extra
+	 *   check for field name.
 	 *
 	 * @since 1.20
 	 *
@@ -97,6 +97,8 @@ interface IORMTable {
 	 * Selects the the specified fields of the records matching the provided
 	 * conditions and returns them as DBDataObject. Field names get prefixed.
 	 *
+	 * @see DatabaseBase::select()
+	 *
 	 * @since 1.20
 	 *
 	 * @param array|string|null $fields
@@ -104,10 +106,11 @@ interface IORMTable {
 	 * @param array $options
 	 * @param string|null $functionName
 	 *
-	 * @return ORMResult
+	 * @return ORMResult The result set
+	 * @throws DBQueryError if the query failed (even if the database was in ignoreErrors mode)
 	 */
 	public function select( $fields = null, array $conditions = array(),
-							array $options = array(), $functionName = null );
+		array $options = array(), $functionName = null );
 
 	/**
 	 * Selects the the specified fields of the records matching the provided
@@ -123,7 +126,7 @@ interface IORMTable {
 	 * @return array of self
 	 */
 	public function selectObjects( $fields = null, array $conditions = array(),
-								   array $options = array(), $functionName = null );
+		array $options = array(), $functionName = null );
 
 	/**
 	 * Do the actual select.
@@ -136,9 +139,10 @@ interface IORMTable {
 	 * @param null|string $functionName
 	 *
 	 * @return ResultWrapper
+	 * @throws DBQueryError if the query failed (even if the database was in ignoreErrors mode)
 	 */
 	public function rawSelect( $fields = null, array $conditions = array(),
-							   array $options = array(), $functionName = null );
+		array $options = array(), $functionName = null );
 
 	/**
 	 * Selects the the specified fields of the records matching the provided
@@ -163,7 +167,7 @@ interface IORMTable {
 	 * @return array of array
 	 */
 	public function selectFields( $fields = null, array $conditions = array(),
-								  array $options = array(), $collapse = true, $functionName = null );
+		array $options = array(), $collapse = true, $functionName = null );
 
 	/**
 	 * Selects the the specified fields of the first matching record.
@@ -179,7 +183,7 @@ interface IORMTable {
 	 * @return IORMRow|bool False on failure
 	 */
 	public function selectRow( $fields = null, array $conditions = array(),
-							   array $options = array(), $functionName = null );
+		array $options = array(), $functionName = null );
 
 	/**
 	 * Selects the the specified fields of the records matching the provided
@@ -195,7 +199,7 @@ interface IORMTable {
 	 * @return ResultWrapper
 	 */
 	public function rawSelectRow( array $fields, array $conditions = array(),
-								  array $options = array(), $functionName = null );
+		array $options = array(), $functionName = null );
 
 	/**
 	 * Selects the the specified fields of the first record matching the provided
@@ -215,7 +219,7 @@ interface IORMTable {
 	 * @return mixed|array|bool False on failure
 	 */
 	public function selectFieldsRow( $fields = null, array $conditions = array(),
-									 array $options = array(), $collapse = true, $functionName = null );
+		array $options = array(), $collapse = true, $functionName = null );
 
 	/**
 	 * Returns if there is at least one record matching the provided conditions.
@@ -228,6 +232,15 @@ interface IORMTable {
 	 * @return boolean
 	 */
 	public function has( array $conditions = array() );
+
+	/**
+	 * Checks if the table exists
+	 *
+	 * @since 1.21
+	 *
+	 * @return boolean
+	 */
+	public function exists();
 
 	/**
 	 * Returns the amount of matching records.
@@ -297,6 +310,73 @@ interface IORMTable {
 	 * @since 1.20
 	 */
 	public function setReadDb( $db );
+
+	/**
+	 * Get the ID of the any foreign wiki to use as a target for database operations
+	 *
+	 * @since 1.20
+	 *
+	 * @return String|bool The target wiki, in a form that LBFactory
+	 *   understands (or false if the local wiki is used)
+	 */
+	public function getTargetWiki();
+
+	/**
+	 * Set the ID of the any foreign wiki to use as a target for database operations
+	 *
+	 * @param string|bool $wiki The target wiki, in a form that LBFactory
+	 *   understands (or false if the local wiki shall be used)
+	 *
+	 * @since 1.20
+	 */
+	public function setTargetWiki( $wiki );
+
+	/**
+	 * Get the database type used for read operations.
+	 * This is to be used instead of wfGetDB.
+	 *
+	 * @see LoadBalancer::getConnection
+	 *
+	 * @since 1.20
+	 *
+	 * @return DatabaseBase The database object
+	 */
+	public function getReadDbConnection();
+
+	/**
+	 * Get the database type used for read operations.
+	 * This is to be used instead of wfGetDB.
+	 *
+	 * @see LoadBalancer::getConnection
+	 *
+	 * @since 1.20
+	 *
+	 * @return DatabaseBase The database object
+	 */
+	public function getWriteDbConnection();
+
+	/**
+	 * Get the database type used for read operations.
+	 *
+	 * @see wfGetLB
+	 *
+	 * @since 1.20
+	 *
+	 * @return LoadBalancer The database load balancer object
+	 */
+	public function getLoadBalancer();
+
+	/**
+	 * Releases the lease on the given database connection. This is useful mainly
+	 * for connections to a foreign wiki. It does nothing for connections to the local wiki.
+	 *
+	 * @see LoadBalancer::reuseConnection
+	 *
+	 * @param DatabaseBase $db the database
+	 *
+	 * @since 1.20
+	 */
+	public function releaseConnection( DatabaseBase $db );
 
 	/**
 	 * Update the records matching the provided conditions by
@@ -381,15 +461,6 @@ interface IORMTable {
 	public function unprefixFieldName( $fieldName );
 
 	/**
-	 * Get an instance of this class.
-	 *
-	 * @since 1.20
-	 *
-	 * @return IORMTable
-	 */
-	public static function singleton();
-
-	/**
 	 * Get an array with fields from a database result,
 	 * that can be fed directly to the constructor or
 	 * to setFields.
@@ -444,5 +515,4 @@ interface IORMTable {
 	 * @return boolean
 	 */
 	public function canHaveField( $name );
-
 }

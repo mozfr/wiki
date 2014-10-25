@@ -27,12 +27,33 @@
  * @ingroup SpecialPage
  */
 abstract class PageQueryPage extends QueryPage {
+	/**
+	 * Run a LinkBatch to pre-cache LinkCache information,
+	 * like page existence and information for stub color and redirect hints.
+	 * This should be done for live data and cached data.
+	 *
+	 * @param $db DatabaseBase connection
+	 * @param ResultWrapper $res
+	 */
+	public function preprocessResults( $db, $res ) {
+		if ( !$res->numRows() ) {
+			return;
+		}
+
+		$batch = new LinkBatch();
+		foreach ( $res as $row ) {
+			$batch->add( $row->namespace, $row->title );
+		}
+		$batch->execute();
+
+		$res->seek( 0 );
+	}
 
 	/**
 	 * Format the result as a simple link to the page
 	 *
-	 * @param $skin Skin
-	 * @param $row Object: result row
+	 * @param Skin $skin
+	 * @param object $row Result row
 	 * @return string
 	 */
 	public function formatResult( $skin, $row ) {
@@ -42,7 +63,7 @@ abstract class PageQueryPage extends QueryPage {
 
 		if ( $title instanceof Title ) {
 			$text = $wgContLang->convert( $title->getPrefixedText() );
-			return Linker::linkKnown( $title, htmlspecialchars( $text ) );
+			return Linker::link( $title, htmlspecialchars( $text ) );
 		} else {
 			return Html::element( 'span', array( 'class' => 'mw-invalidtitle' ),
 				Linker::getInvalidTitleDescription( $this->getContext(), $row->namespace, $row->title ) );

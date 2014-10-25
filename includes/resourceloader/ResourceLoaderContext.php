@@ -58,14 +58,14 @@ class ResourceLoaderContext {
 		// Interpret request
 		// List of modules
 		$modules = $request->getVal( 'modules' );
-		$this->modules   = $modules ? self::expandModuleNames( $modules ) : array();
+		$this->modules = $modules ? self::expandModuleNames( $modules ) : array();
 		// Various parameters
-		$this->skin      = $request->getVal( 'skin' );
-		$this->user      = $request->getVal( 'user' );
-		$this->debug     = $request->getFuzzyBool( 'debug', $wgResourceLoaderDebug );
-		$this->only      = $request->getVal( 'only' );
-		$this->version   = $request->getVal( 'version' );
-		$this->raw       = $request->getFuzzyBool( 'raw' );
+		$this->skin = $request->getVal( 'skin' );
+		$this->user = $request->getVal( 'user' );
+		$this->debug = $request->getFuzzyBool( 'debug', $wgResourceLoaderDebug );
+		$this->only = $request->getVal( 'only' );
+		$this->version = $request->getVal( 'version' );
+		$this->raw = $request->getFuzzyBool( 'raw' );
 
 		$skinnames = Skin::getSkinNames();
 		// If no skin is specified, or we don't recognize the skin, use the default skin
@@ -78,13 +78,11 @@ class ResourceLoaderContext {
 	 * Expand a string of the form jquery.foo,bar|jquery.ui.baz,quux to
 	 * an array of module names like array( 'jquery.foo', 'jquery.bar',
 	 * 'jquery.ui.baz', 'jquery.ui.quux' )
-	 * @param $modules String Packed module name list
+	 * @param string $modules Packed module name list
 	 * @return array of module names
 	 */
 	public static function expandModuleNames( $modules ) {
 		$retval = array();
-		// For backwards compatibility with an earlier hack, replace ! with .
-		$modules = str_replace( '!', '.', $modules );
 		$exploded = explode( '|', $modules );
 		foreach ( $exploded as $group ) {
 			if ( strpos( $group, ',' ) === false ) {
@@ -96,7 +94,7 @@ class ResourceLoaderContext {
 				$pos = strrpos( $group, '.' );
 				if ( $pos === false ) {
 					// Prefixless modules, i.e. without dots
-					$retval = explode( ',', $group );
+					$retval = array_merge( $retval, explode( ',', $group ) );
 				} else {
 					// We have a prefix and a bunch of suffixes
 					$prefix = substr( $group, 0, $pos ); // 'foo'
@@ -144,11 +142,8 @@ class ResourceLoaderContext {
 	 */
 	public function getLanguage() {
 		if ( $this->language === null ) {
-			global $wgLang;
-			$this->language  = $this->request->getVal( 'lang' );
-			if ( !$this->language ) {
-				$this->language = $wgLang->getCode();
-			}
+			// Must be a valid language code after this point (bug 62849)
+			$this->language = RequestContext::sanitizeLangCode( $this->request->getVal( 'lang' ) );
 		}
 		return $this->language;
 	}
@@ -160,7 +155,7 @@ class ResourceLoaderContext {
 		if ( $this->direction === null ) {
 			$this->direction = $this->request->getVal( 'dir' );
 			if ( !$this->direction ) {
-				# directionality based on user language (see bug 6100)
+				// Determine directionality based on user language (bug 6100)
 				$this->direction = Language::factory( $this->getLanguage() )->getDir();
 			}
 		}

@@ -36,15 +36,17 @@
  * @since 1.20
  */
 abstract class FileJournal {
-	protected $backend; // string
-	protected $ttlDays; // integer
+	/** @var string */
+	protected $backend;
+
+	/** @var int */
+	protected $ttlDays;
 
 	/**
 	 * Construct a new instance from configuration.
-	 * $config includes:
-	 *     'ttlDays' : days to keep log entries around (false means "forever")
 	 *
-	 * @param $config Array
+	 * @param array $config Includes:
+	 *     'ttlDays' : days to keep log entries around (false means "forever")
 	 */
 	protected function __construct( array $config ) {
 		$this->ttlDays = isset( $config['ttlDays'] ) ? $config['ttlDays'] : false;
@@ -53,8 +55,8 @@ abstract class FileJournal {
 	/**
 	 * Create an appropriate FileJournal object from config
 	 *
-	 * @param $config Array
-	 * @param $backend string A registered file backend name
+	 * @param array $config
+	 * @param string $backend A registered file backend name
 	 * @throws MWException
 	 * @return FileJournal
 	 */
@@ -65,6 +67,7 @@ abstract class FileJournal {
 			throw new MWException( "Class given is not an instance of FileJournal." );
 		}
 		$jrn->backend = $backend;
+
 		return $jrn;
 	}
 
@@ -79,42 +82,78 @@ abstract class FileJournal {
 			$s .= mt_rand( 0, 2147483647 );
 		}
 		$s = wfBaseConvert( sha1( $s ), 16, 36, 31 );
+
 		return substr( wfBaseConvert( wfTimestamp( TS_MW ), 10, 36, 9 ) . $s, 0, 31 );
 	}
 
 	/**
 	 * Log changes made by a batch file operation.
-	 * $entries is an array of log entries, each of which contains:
-	 *     op      : Basic operation name (create, store, copy, delete)
+	 *
+	 * @param array $entries List of file operations (each an array of parameters) which contain:
+	 *     op      : Basic operation name (create, update, delete)
 	 *     path    : The storage path of the file
 	 *     newSha1 : The final base 36 SHA-1 of the file
-	 * Note that 'false' should be used as the SHA-1 for non-existing files.
-	 *
-	 * @param $entries Array List of file operations (each an array of parameters)
-	 * @param $batchId string UUID string that identifies the operation batch
+	 *   Note that 'false' should be used as the SHA-1 for non-existing files.
+	 * @param string $batchId UUID string that identifies the operation batch
 	 * @return Status
 	 */
 	final public function logChangeBatch( array $entries, $batchId ) {
 		if ( !count( $entries ) ) {
 			return Status::newGood();
 		}
+
 		return $this->doLogChangeBatch( $entries, $batchId );
 	}
 
 	/**
 	 * @see FileJournal::logChangeBatch()
 	 *
-	 * @param $entries Array List of file operations (each an array of parameters)
-	 * @param $batchId string UUID string that identifies the operation batch
+	 * @param array $entries List of file operations (each an array of parameters)
+	 * @param string $batchId UUID string that identifies the operation batch
 	 * @return Status
 	 */
 	abstract protected function doLogChangeBatch( array $entries, $batchId );
 
 	/**
+	 * Get the position ID of the latest journal entry
+	 *
+	 * @return int|bool
+	 */
+	final public function getCurrentPosition() {
+		return $this->doGetCurrentPosition();
+	}
+
+	/**
+	 * @see FileJournal::getCurrentPosition()
+	 * @return int|bool
+	 */
+	abstract protected function doGetCurrentPosition();
+
+	/**
+	 * Get the position ID of the latest journal entry at some point in time
+	 *
+	 * @param int|string $time timestamp
+	 * @return int|bool
+	 */
+	final public function getPositionAtTime( $time ) {
+		return $this->doGetPositionAtTime( $time );
+	}
+
+	/**
+	 * @see FileJournal::getPositionAtTime()
+	 * @param int|string $time Timestamp
+	 * @return int|bool
+	 */
+	abstract protected function doGetPositionAtTime( $time );
+
+	/**
 	 * Get an array of file change log entries.
 	 * A starting change ID and/or limit can be specified.
 	 *
-	 * The result as a list of associative arrays, each having:
+	 * @param $start integer Starting change ID or null
+	 * @param $limit integer Maximum number of items to return
+	 * @param &$next string Updated to the ID of the next entry.
+	 * @return array List of associative arrays, each having:
 	 *     id         : unique, monotonic, ID for this change
 	 *     batch_uuid : UUID for an operation batch
 	 *     backend    : the backend name
@@ -122,13 +161,7 @@ abstract class FileJournal {
 	 *     path       : affected storage path
 	 *     new_sha1   : base 36 sha1 of the new file had the operation succeeded
 	 *     timestamp  : TS_MW timestamp of the batch change
-
-	 * Also, $next is updated to the ID of the next entry.
-	 *
-	 * @param $start integer Starting change ID or null
-	 * @param $limit integer Maximum number of items to return
-	 * @param &$next string
-	 * @return Array
+	 *   Also, $next is updated to the ID of the next entry.
 	 */
 	final public function getChangeEntries( $start = null, $limit = 0, &$next = null ) {
 		$entries = $this->doGetChangeEntries( $start, $limit ? $limit + 1 : 0 );
@@ -138,12 +171,15 @@ abstract class FileJournal {
 		} else {
 			$next = null; // end of list
 		}
+
 		return $entries;
 	}
 
 	/**
 	 * @see FileJournal::getChangeEntries()
-	 * @return Array
+	 * @param int $start
+	 * @param int $limit
+	 * @return array
 	 */
 	abstract protected function doGetChangeEntries( $start, $limit );
 
@@ -169,9 +205,9 @@ abstract class FileJournal {
  */
 class NullFileJournal extends FileJournal {
 	/**
-	 * @see FileJournal::logChangeBatch()
-	 * @param $entries array
-	 * @param $batchId string
+	 * @see FileJournal::doLogChangeBatch()
+	 * @param array $entries
+	 * @param string $batchId
 	 * @return Status
 	 */
 	protected function doLogChangeBatch( array $entries, $batchId ) {
@@ -179,15 +215,34 @@ class NullFileJournal extends FileJournal {
 	}
 
 	/**
+	 * @see FileJournal::doGetCurrentPosition()
+	 * @return int|bool
+	 */
+	protected function doGetCurrentPosition() {
+		return false;
+	}
+
+	/**
+	 * @see FileJournal::doGetPositionAtTime()
+	 * @param int|string $time timestamp
+	 * @return int|bool
+	 */
+	protected function doGetPositionAtTime( $time ) {
+		return false;
+	}
+
+	/**
 	 * @see FileJournal::doGetChangeEntries()
-	 * @return Array
+	 * @param int $start
+	 * @param int $limit
+	 * @return array
 	 */
 	protected function doGetChangeEntries( $start, $limit ) {
 		return array();
 	}
 
 	/**
-	 * @see FileJournal::purgeOldLogs()
+	 * @see FileJournal::doPurgeOldLogs()
 	 * @return Status
 	 */
 	protected function doPurgeOldLogs() {

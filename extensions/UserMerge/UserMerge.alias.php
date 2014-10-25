@@ -5,6 +5,7 @@
  * @file
  * @ingroup Extensions
  */
+// @codingStandardsIgnoreFile
 
 $specialPageAliases = array();
 
@@ -23,7 +24,7 @@ $specialPageAliases['arz'] = array(
 	'UserMerge' => array( 'دمج_يوزر' ),
 );
 
-/** Assamese (অসমীয়া) */
+/** Assamese (অসমীয়া) */
 $specialPageAliases['as'] = array(
 	'UserMerge' => array( 'সদস্য_একত্ৰীকৰণ_কৰক' ),
 );
@@ -48,6 +49,11 @@ $specialPageAliases['bxr'] = array(
 	'UserMerge' => array( 'Хэрэглэгшые_нэгэдхэхэ' ),
 );
 
+/** Min Dong Chinese (Mìng-dĕ̤ng-ngṳ̄) */
+$specialPageAliases['cdo'] = array(
+	'UserMerge' => array( '用戶合併' ),
+);
+
 /** German (Deutsch) */
 $specialPageAliases['de'] = array(
 	'UserMerge' => array( 'Benutzerkonten_vereinigen' ),
@@ -55,12 +61,22 @@ $specialPageAliases['de'] = array(
 
 /** Zazaki (Zazaki) */
 $specialPageAliases['diq'] = array(
-	'UserMerge' => array( 'KarberaPêtewrke' ),
+	'UserMerge' => array( 'KarberaPétewrke' ),
 );
 
 /** Lower Sorbian (dolnoserbski) */
 $specialPageAliases['dsb'] = array(
 	'UserMerge' => array( 'Wužywarjow zjadnośiś' ),
+);
+
+/** Greek (Ελληνικά) */
+$specialPageAliases['el'] = array(
+	'UserMerge' => array( 'ΣυγχώνευσηΧρήστη' ),
+);
+
+/** Esperanto (Esperanto) */
+$specialPageAliases['eo'] = array(
+	'UserMerge' => array( 'Kunigi_uzanton' ),
 );
 
 /** Spanish (español) */
@@ -86,6 +102,11 @@ $specialPageAliases['fr'] = array(
 /** Franco-Provençal (arpetan) */
 $specialPageAliases['frp'] = array(
 	'UserMerge' => array( 'Fusionar_los_usanciérs', 'FusionarLosUsanciérs' ),
+);
+
+/** Galician (galego) */
+$specialPageAliases['gl'] = array(
+	'UserMerge' => array( 'Fusionar_o_usuario', 'Fusionar_usuario', 'Fusionar_a_usuaria', 'Fusionar_usuaria' ),
 );
 
 /** Swiss German (Alemannisch) */
@@ -143,6 +164,11 @@ $specialPageAliases['ksh'] = array(
 	'UserMerge' => array( 'Metmaacher zosammelääje', 'Medmaacher zosammelääje' ),
 );
 
+/** Cornish (kernowek) */
+$specialPageAliases['kw'] = array(
+	'UserMerge' => array( 'KesunyaDevnydhyer' ),
+);
+
 /** Luxembourgish (Lëtzebuergesch) */
 $specialPageAliases['lb'] = array(
 	'UserMerge' => array( 'Benotzerkonten_zesummeleeën' ),
@@ -163,12 +189,12 @@ $specialPageAliases['mr'] = array(
 	'UserMerge' => array( 'सदस्यविलीनीकरण' ),
 );
 
-/** Norwegian Bokmål (norsk (bokmål)‎) */
+/** Norwegian Bokmål (norsk bokmål) */
 $specialPageAliases['nb'] = array(
 	'UserMerge' => array( 'Slå_sammen_brukere' ),
 );
 
-/** Nedersaksies (Nedersaksies) */
+/** Low Saxon (Netherlands) (Nedersaksies) */
 $specialPageAliases['nds-nl'] = array(
 	'UserMerge' => array( 'Gebrukers_samenvoegen' ),
 );
@@ -230,7 +256,12 @@ $specialPageAliases['tr'] = array(
 
 /** Ukrainian (українська) */
 $specialPageAliases['uk'] = array(
-	'UserMerge' => array( 'Об\'єднання_облікових_записів' ),
+	'UserMerge' => array( 'Об\'єднання_користувачів' ),
+);
+
+/** Vietnamese (Tiếng Việt) */
+$specialPageAliases['vi'] = array(
+	'UserMerge' => array( 'Hợp_nhất_người_dùng' ),
 );
 
 /** Yiddish (ייִדיש) */
@@ -241,4 +272,9 @@ $specialPageAliases['yi'] = array(
 /** Simplified Chinese (中文（简体）‎) */
 $specialPageAliases['zh-hans'] = array(
 	'UserMerge' => array( '合并用户' ),
+);
+
+/** Traditional Chinese (中文（繁體）‎) */
+$specialPageAliases['zh-hant'] = array(
+	'UserMerge' => array( '合併用戶' ),
 );

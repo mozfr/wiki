@@ -3,7 +3,7 @@
  * Contain classes to list log entries
  *
  * Copyright © 2004 Brion Vibber <brion@pobox.com>, 2008 Aaron Schulz
- * http://www.mediawiki.org/
+ * https://www.mediawiki.org/
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,10 +40,11 @@ class LogEventsList extends ContextSource {
 	 * The first two parameters used to be $skin and $out, but now only a context
 	 * is needed, that's why there's a second unused parameter.
 	 *
-	 * @param $context IContextSource Context to use; formerly it was Skin object.
-	 * @param $unused void Unused; used to be an OutputPage object.
-	 * @param $flags int flags; can be a combinaison of self::NO_ACTION_LINK,
-	 *        self::NO_EXTRA_USER_LINKS or self::USE_REVDEL_CHECKBOXES.
+	 * @param IContextSource|Skin $context Context to use; formerly it was
+	 *   a Skin object. Use of Skin is deprecated.
+	 * @param null $unused Unused; used to be an OutputPage object.
+	 * @param int $flags Can be a combination of self::NO_ACTION_LINK,
+	 *   self::NO_EXTRA_USER_LINKS or self::USE_REVDEL_CHECKBOXES.
 	 */
 	public function __construct( $context, $unused = null, $flags = 0 ) {
 		if ( $context instanceof IContextSource ) {
@@ -60,23 +61,24 @@ class LogEventsList extends ContextSource {
 	 * Deprecated alias for getTitle(); do not use.
 	 *
 	 * @deprecated in 1.20; use getTitle() instead.
-	 * @return Title object
+	 * @return Title
 	 */
 	public function getDisplayTitle() {
+		wfDeprecated( __METHOD__, '1.20' );
 		return $this->getTitle();
 	}
 
 	/**
 	 * Set page title and show header for this log type
-	 * @param $type Array
+	 * @param array $type
 	 * @deprecated in 1.19
 	 */
 	public function showHeader( $type ) {
 		wfDeprecated( __METHOD__, '1.19' );
 		// If only one log type is used, then show a special message...
-		$headerType = (count($type) == 1) ? $type[0] : '';
+		$headerType = count( $type ) == 1 ? $type[0] : '';
 		$out = $this->getOutput();
-		if( LogPage::isLogType( $headerType ) ) {
+		if ( LogPage::isLogType( $headerType ) ) {
 			$page = new LogPage( $headerType );
 			$out->setPageTitle( $page->getName()->text() );
 			$out->addHTML( $page->getDescription()->parseAsBlock() );
@@ -88,23 +90,24 @@ class LogEventsList extends ContextSource {
 	/**
 	 * Show options for the log list
 	 *
-	 * @param $types string or Array
-	 * @param $user String
-	 * @param $page String
-	 * @param $pattern String
-	 * @param $year Integer: year
-	 * @param $month Integer: month
-	 * @param $filter: array
-	 * @param $tagFilter: array?
+	 * @param array|string $types
+	 * @param string $user
+	 * @param string $page
+	 * @param string $pattern
+	 * @param int $year Year
+	 * @param int $month Month
+	 * @param array $filter
+	 * @param string $tagFilter Tag to select by default
 	 */
-	public function showOptions( $types=array(), $user='', $page='', $pattern='', $year='',
-		$month = '', $filter = null, $tagFilter='' ) {
+	public function showOptions( $types = array(), $user = '', $page = '', $pattern = '', $year = 0,
+		$month = 0, $filter = null, $tagFilter = ''
+	) {
 		global $wgScript, $wgMiserMode;
 
 		$title = SpecialPage::getTitleFor( 'Log' );
 
 		// For B/C, we take strings, but make sure they are converted...
-		$types = ($types === '') ? array() : (array)$types;
+		$types = ( $types === '' ) ? array() : (array)$types;
 
 		$tagSelector = ChangeTags::buildTagFilterSelector( $tagFilter );
 
@@ -117,20 +120,20 @@ class LogEventsList extends ContextSource {
 		$html .= $this->getExtraInputs( $types ) . "\n";
 
 		// Title pattern, if allowed
-		if (!$wgMiserMode) {
+		if ( !$wgMiserMode ) {
 			$html .= $this->getTitlePattern( $pattern ) . "\n";
 		}
 
 		// date menu
-		$html .= Xml::tags( 'p', null, Xml::dateMenu( $year, $month ) );
+		$html .= Xml::tags( 'p', null, Xml::dateMenu( (int)$year, (int)$month ) );
 
 		// Tag filter
-		if ($tagSelector) {
+		if ( $tagSelector ) {
 			$html .= Xml::tags( 'p', null, implode( '&#160;', $tagSelector ) );
 		}
 
 		// Filter links
-		if ($filter) {
+		if ( $filter ) {
 			$html .= Xml::tags( 'p', null, $this->getFilterLinks( $filter ) );
 		}
 
@@ -147,8 +150,8 @@ class LogEventsList extends ContextSource {
 	}
 
 	/**
-	 * @param $filter Array
-	 * @return String: Formatted HTML
+	 * @param array $filter
+	 * @return string Formatted HTML
 	 */
 	private function getFilterLinks( $filter ) {
 		// show/hide links
@@ -156,13 +159,13 @@ class LogEventsList extends ContextSource {
 		// Option value -> message mapping
 		$links = array();
 		$hiddens = ''; // keep track for "go" button
-		foreach( $filter as $type => $val ) {
+		foreach ( $filter as $type => $val ) {
 			// Should the below assignment be outside the foreach?
 			// Then it would have to be copied. Not certain what is more expensive.
 			$query = $this->getDefaultQuery();
 			$queryKey = "hide_{$type}_log";
 
-			$hideVal = 1 - intval($val);
+			$hideVal = 1 - intval( $val );
 			$query[$queryKey] = $hideVal;
 
 			$link = Linker::linkKnown(
@@ -172,11 +175,13 @@ class LogEventsList extends ContextSource {
 				$query
 			);
 
+			// Message: log-show-hide-patrol
 			$links[$type] = $this->msg( "log-show-hide-{$type}" )->rawParams( $link )->escaped();
 			$hiddens .= Html::hidden( "hide_{$type}_log", $val ) . "\n";
 		}
+
 		// Build links
-		return '<small>'.$this->getLanguage()->pipeList( $links ) . '</small>' . $hiddens;
+		return '<small>' . $this->getLanguage()->pipeList( $links ) . '</small>' . $hiddens;
 	}
 
 	private function getDefaultQuery() {
@@ -190,17 +195,19 @@ class LogEventsList extends ContextSource {
 			unset( $this->mDefaultQuery['month'] );
 			unset( $this->mDefaultQuery['year'] );
 		}
+
 		return $this->mDefaultQuery;
 	}
 
 	/**
-	 * @param $queryTypes Array
-	 * @return String: Formatted HTML
+	 * @param array $queryTypes
+	 * @return string Formatted HTML
 	 */
 	private function getTypeMenu( $queryTypes ) {
-		$queryType = count($queryTypes) == 1 ? $queryTypes[0] : '';
+		$queryType = count( $queryTypes ) == 1 ? $queryTypes[0] : '';
 		$selector = $this->getTypeSelector();
 		$selector->setDefault( $queryType );
+
 		return $selector->getHtml();
 	}
 
@@ -212,7 +219,7 @@ class LogEventsList extends ContextSource {
 	public function getTypeSelector() {
 		$typesByName = array(); // Temporary array
 		// First pass to load the log names
-		foreach(  LogPage::validTypes() as $type ) {
+		foreach ( LogPage::validTypes() as $type ) {
 			$page = new LogPage( $type );
 			$restriction = $page->getRestriction();
 			if ( $this->getUser()->isAllowed( $restriction ) ) {
@@ -221,7 +228,7 @@ class LogEventsList extends ContextSource {
 		}
 
 		// Second pass to sort by name
-		asort($typesByName);
+		asort( $typesByName );
 
 		// Always put "All public logs" on top
 		$public = $typesByName[''];
@@ -229,7 +236,7 @@ class LogEventsList extends ContextSource {
 		$typesByName = array( '' => $public ) + $typesByName;
 
 		$select = new XmlSelect( 'type' );
-		foreach( $typesByName as $type => $name ) {
+		foreach ( $typesByName as $type => $name ) {
 			$select->addOption( $name, $type );
 		}
 
@@ -237,23 +244,35 @@ class LogEventsList extends ContextSource {
 	}
 
 	/**
-	 * @param $user String
-	 * @return String: Formatted HTML
+	 * @param string $user
+	 * @return string Formatted HTML
 	 */
 	private function getUserInput( $user ) {
-		return '<span style="white-space: nowrap">' .
-			Xml::inputLabel( $this->msg( 'specialloguserlabel' )->text(), 'user', 'mw-log-user', 15, $user ) .
-			'</span>';
+		$label = Xml::inputLabel(
+			$this->msg( 'specialloguserlabel' )->text(),
+			'user',
+			'mw-log-user',
+			15,
+			$user
+		);
+
+		return '<span style="white-space: nowrap">' . $label . '</span>';
 	}
 
 	/**
-	 * @param $title String
-	 * @return String: Formatted HTML
+	 * @param string $title
+	 * @return string Formatted HTML
 	 */
 	private function getTitleInput( $title ) {
-		return '<span style="white-space: nowrap">' .
-			Xml::inputLabel( $this->msg( 'speciallogtitlelabel' )->text(), 'page', 'mw-log-page', 20, $title ) .
-			'</span>';
+		$label = Xml::inputLabel(
+			$this->msg( 'speciallogtitlelabel' )->text(),
+			'page',
+			'mw-log-page',
+			20,
+			$title
+		);
+
+		return '<span style="white-space: nowrap">' . $label .	'</span>';
 	}
 
 	/**
@@ -267,19 +286,20 @@ class LogEventsList extends ContextSource {
 	}
 
 	/**
-	 * @param $types
+	 * @param array $types
 	 * @return string
 	 */
 	private function getExtraInputs( $types ) {
 		$offender = $this->getRequest()->getVal( 'offender' );
 		$user = User::newFromName( $offender, false );
-		if( !$user || ($user->getId() == 0 && !IP::isIPAddress($offender) ) ) {
+		if ( !$user || ( $user->getId() == 0 && !IP::isIPAddress( $offender ) ) ) {
 			$offender = ''; // Blank field if invalid
 		}
-		if( count($types) == 1 && $types[0] == 'suppress' ) {
+		if ( count( $types ) == 1 && $types[0] == 'suppress' ) {
 			return Xml::inputLabel( $this->msg( 'revdelete-offender' )->text(), 'offender',
 				'mw-log-offender', 20, $offender );
 		}
+
 		return '';
 	}
 
@@ -298,8 +318,8 @@ class LogEventsList extends ContextSource {
 	}
 
 	/**
-	 * @param $row Row: a single row from the result set
-	 * @return String: Formatted HTML list item
+	 * @param stdClass $row A single row from the result set
+	 * @return string Formatted HTML list item
 	 */
 	public function logLine( $row ) {
 		$entry = DatabaseLogEntry::newFromRow( $row );
@@ -307,7 +327,6 @@ class LogEventsList extends ContextSource {
 		$formatter->setContext( $this->getContext() );
 		$formatter->setShowUserToolLinks( !( $this->flags & self::NO_EXTRA_USER_LINKS ) );
 
-		$title = $entry->getTarget();
 		$time = htmlspecialchars( $this->getLanguage()->userTimeAndDate(
 			$entry->getTimestamp(), $this->getUser() ) );
 
@@ -339,61 +358,77 @@ class LogEventsList extends ContextSource {
 	}
 
 	/**
-	 * @param $row Row
+	 * @param stdClass $row Row
 	 * @return string
 	 */
 	private function getShowHideLinks( $row ) {
-		if( ( $this->flags == self::NO_ACTION_LINK ) // we don't want to see the links
-			|| $row->log_type == 'suppress' ) { // no one can hide items from the suppress log
+		// We don't want to see the links and
+		// no one can hide items from the suppress log.
+		if ( ( $this->flags == self::NO_ACTION_LINK )
+			|| $row->log_type == 'suppress'
+		) {
 			return '';
 		}
 		$del = '';
 		$user = $this->getUser();
 		// Don't show useless checkbox to people who cannot hide log entries
-		if( $user->isAllowed( 'deletedhistory' ) ) {
-			if( $row->log_deleted || $user->isAllowed( 'deletelogentry' ) ) {
-				$canHide = $user->isAllowed( 'deletelogentry' );
-				if ( $this->flags & self::USE_REVDEL_CHECKBOXES ) { // Show checkboxes instead of links.
-					if ( !self::userCan( $row, LogPage::DELETED_RESTRICTED, $user ) ) { // If event was hidden from sysops
+		if ( $user->isAllowed( 'deletedhistory' ) ) {
+			$canHide = $user->isAllowed( 'deletelogentry' );
+			if ( $row->log_deleted || $canHide ) {
+				// Show checkboxes instead of links.
+				if ( $canHide && $this->flags & self::USE_REVDEL_CHECKBOXES ) {
+					// If event was hidden from sysops
+					if ( !self::userCan( $row, LogPage::DELETED_RESTRICTED, $user ) ) {
 						$del = Xml::check( 'deleterevisions', false, array( 'disabled' => 'disabled' ) );
 					} else {
-						$del = Xml::check( 'showhiderevisions', false, array( 'name' => 'ids[' . $row->log_id . ']' ) );
+						$del = Xml::check(
+							'showhiderevisions',
+							false,
+							array( 'name' => 'ids[' . $row->log_id . ']' )
+						);
 					}
 				} else {
-					if ( !self::userCan( $row, LogPage::DELETED_RESTRICTED, $user ) ) { // If event was hidden from sysops
+					// If event was hidden from sysops
+					if ( !self::userCan( $row, LogPage::DELETED_RESTRICTED, $user ) ) {
 						$del = Linker::revDeleteLinkDisabled( $canHide );
 					} else {
 						$query = array(
 							'target' => SpecialPage::getTitleFor( 'Log', $row->log_type )->getPrefixedDBkey(),
-							'type'   => 'logging',
-							'ids'    => $row->log_id,
+							'type' => 'logging',
+							'ids' => $row->log_id,
 						);
-						$del = Linker::revDeleteLink( $query, self::isDeleted( $row, LogPage::DELETED_RESTRICTED ), $canHide );
+						$del = Linker::revDeleteLink(
+							$query,
+							self::isDeleted( $row, LogPage::DELETED_RESTRICTED ),
+							$canHide
+						);
 					}
 				}
 			}
 		}
+
 		return $del;
 	}
 
 	/**
-	 * @param $row Row
-	 * @param $type Mixed: string/array
-	 * @param $action Mixed: string/array
-	 * @param $right string
-	 * @return Boolean
+	 * @param stdClass $row Row
+	 * @param string|array $type
+	 * @param string|array $action
+	 * @param string $right
+	 * @return bool
 	 */
-	public static function typeAction( $row, $type, $action, $right='' ) {
-		$match = is_array($type) ?
+	public static function typeAction( $row, $type, $action, $right = '' ) {
+		$match = is_array( $type ) ?
 			in_array( $row->log_type, $type ) : $row->log_type == $type;
-		if( $match ) {
+		if ( $match ) {
 			$match = is_array( $action ) ?
 				in_array( $row->log_action, $action ) : $row->log_action == $action;
-			if( $match && $right ) {
+			if ( $match && $right ) {
 				global $wgUser;
 				$match = $wgUser->isAllowed( $right );
 			}
 		}
+
 		return $match;
 	}
 
@@ -401,10 +436,10 @@ class LogEventsList extends ContextSource {
 	 * Determine if the current user is allowed to view a particular
 	 * field of this log row, if it's marked as deleted.
 	 *
-	 * @param $row Row
-	 * @param $field Integer
-	 * @param $user User object to check, or null to use $wgUser
-	 * @return Boolean
+	 * @param stdClass $row Row
+	 * @param int $field
+	 * @param User $user User to check, or null to use $wgUser
+	 * @return bool
 	 */
 	public static function userCan( $row, $field, User $user = null ) {
 		return self::userCanBitfield( $row->log_deleted, $field, $user );
@@ -414,13 +449,13 @@ class LogEventsList extends ContextSource {
 	 * Determine if the current user is allowed to view a particular
 	 * field of this log row, if it's marked as deleted.
 	 *
-	 * @param $bitfield Integer (current field)
-	 * @param $field Integer
-	 * @param $user User object to check, or null to use $wgUser
-	 * @return Boolean
+	 * @param int $bitfield Current field
+	 * @param int $field
+	 * @param User $user User to check, or null to use $wgUser
+	 * @return bool
 	 */
 	public static function userCanBitfield( $bitfield, $field, User $user = null ) {
-		if( $bitfield & $field ) {
+		if ( $bitfield & $field ) {
 			if ( $bitfield & LogPage::DELETED_RESTRICTED ) {
 				$permission = 'suppressrevision';
 			} else {
@@ -431,16 +466,17 @@ class LogEventsList extends ContextSource {
 				global $wgUser;
 				$user = $wgUser;
 			}
+
 			return $user->isAllowed( $permission );
-		} else {
-			return true;
 		}
+
+		return true;
 	}
 
 	/**
-	 * @param $row Row
-	 * @param $field Integer: one of DELETED_* bitfield constants
-	 * @return Boolean
+	 * @param stdClass $row Row
+	 * @param int $field One of DELETED_* bitfield constants
+	 * @return bool
 	 */
 	public static function isDeleted( $row, $field ) {
 		return ( $row->log_deleted & $field ) == $field;
@@ -449,11 +485,11 @@ class LogEventsList extends ContextSource {
 	/**
 	 * Show log extract. Either with text and a box (set $msgKey) or without (don't set $msgKey)
 	 *
-	 * @param $out OutputPage|String-by-reference
-	 * @param $types String|Array Log types to show
-	 * @param $page String|Title The page title to show log entries for
-	 * @param $user String The user who made the log entries
-	 * @param $param array Associative Array with the following additional options:
+	 * @param OutputPage|string $out By-reference
+	 * @param string|array $types Log types to show
+	 * @param string|Title $page The page title to show log entries for
+	 * @param string $user The user who made the log entries
+	 * @param array $param Associative Array with the following additional options:
 	 * - lim Integer Limit of items to show, default is 50
 	 * - conds Array Extra conditions for the query (e.g. "log_action != 'revision'")
 	 * - showIfEmpty boolean Set to false if you don't want any output in case the loglist is empty
@@ -465,18 +501,22 @@ class LogEventsList extends ContextSource {
 	 *   set to '' to unset offset
 	 * - wrap String Wrap the message in html (usually something like "<div ...>$1</div>").
 	 * - flags Integer display flags (NO_ACTION_LINK,NO_EXTRA_USER_LINKS)
-	 * @return Integer Number of total log items (not limited by $lim)
+	 * - useRequestParams boolean Set true to use Pager-related parameters in the WebRequest
+	 * - useMaster boolean Use master DB
+	 * @return int Number of total log items (not limited by $lim)
 	 */
 	public static function showLogExtract(
-		&$out, $types=array(), $page='', $user='', $param = array()
+		&$out, $types = array(), $page = '', $user = '', $param = array()
 	) {
 		$defaultParameters = array(
 			'lim' => 25,
 			'conds' => array(),
 			'showIfEmpty' => true,
-			'msgKey' => array(''),
+			'msgKey' => array( '' ),
 			'wrap' => "$1",
-			'flags' => 0
+			'flags' => 0,
+			'useRequestParams' => false,
+			'useMaster' => false,
 		);
 		# The + operator appends elements of remaining keys from the right
 		# handed array to the left handed, whereas duplicated keys are NOT overwritten.
@@ -488,6 +528,7 @@ class LogEventsList extends ContextSource {
 		$msgKey = $param['msgKey'];
 		$wrap = $param['wrap'];
 		$flags = $param['flags'];
+		$useRequestParams = $param['useRequestParams'];
 		if ( !is_array( $msgKey ) ) {
 			$msgKey = array( $msgKey );
 		}
@@ -501,15 +542,38 @@ class LogEventsList extends ContextSource {
 		# Insert list of top 50 (or top $lim) items
 		$loglist = new LogEventsList( $context, null, $flags );
 		$pager = new LogPager( $loglist, $types, $user, $page, '', $conds );
+		if ( !$useRequestParams ) {
+			# Reset vars that may have been taken from the request
+			$pager->mLimit = 50;
+			$pager->mDefaultLimit = 50;
+			$pager->mOffset = "";
+			$pager->mIsBackwards = false;
+		}
+
+		if ( $param['useMaster'] ) {
+			$pager->mDb = wfGetDB( DB_MASTER );
+		}
 		if ( isset( $param['offset'] ) ) { # Tell pager to ignore WebRequest offset
 			$pager->setOffset( $param['offset'] );
 		}
-		if( $lim > 0 ) $pager->mLimit = $lim;
+
+		if ( $lim > 0 ) {
+			$pager->mLimit = $lim;
+		}
+
 		$logBody = $pager->getBody();
 		$s = '';
-		if( $logBody ) {
+
+		if ( $logBody ) {
 			if ( $msgKey[0] ) {
-				$s = '<div class="mw-warning-with-logexcerpt">';
+				$dir = $context->getLanguage()->getDir();
+				$lang = $context->getLanguage()->getCode();
+
+				$s = Xml::openElement( 'div', array(
+					'class' => "mw-warning-with-logexcerpt mw-content-$dir",
+					'dir' => $dir,
+					'lang' => $lang,
+				) );
 
 				if ( count( $msgKey ) == 1 ) {
 					$s .= $context->msg( $msgKey[0] )->parseAsBlock();
@@ -520,28 +584,34 @@ class LogEventsList extends ContextSource {
 				}
 			}
 			$s .= $loglist->beginLogEventsList() .
-				 $logBody .
-				 $loglist->endLogEventsList();
-		} else {
-			if ( $showIfEmpty ) {
-				$s = Html::rawElement( 'div', array( 'class' => 'mw-warning-logempty' ),
-					$context->msg( 'logempty' )->parse() );
-			}
+				$logBody .
+				$loglist->endLogEventsList();
+		} elseif ( $showIfEmpty ) {
+			$s = Html::rawElement( 'div', array( 'class' => 'mw-warning-logempty' ),
+				$context->msg( 'logempty' )->parse() );
 		}
-		if( $pager->getNumRows() > $pager->mLimit ) { # Show "Full log" link
+
+		if ( $pager->getNumRows() > $pager->mLimit ) { # Show "Full log" link
 			$urlParam = array();
 			if ( $page instanceof Title ) {
 				$urlParam['page'] = $page->getPrefixedDBkey();
 			} elseif ( $page != '' ) {
 				$urlParam['page'] = $page;
 			}
-			if ( $user != '')
+
+			if ( $user != '' ) {
 				$urlParam['user'] = $user;
-			if ( !is_array( $types ) ) # Make it an array, if it isn't
+			}
+
+			if ( !is_array( $types ) ) { # Make it an array, if it isn't
 				$types = array( $types );
+			}
+
 			# If there is exactly one log type, we can link to Special:Log?type=foo
-			if ( count( $types ) == 1 )
+			if ( count( $types ) == 1 ) {
 				$urlParam['type'] = $types[0];
+			}
+
 			$s .= Linker::link(
 				SpecialPage::getTitleFor( 'Log' ),
 				$context->msg( 'log-fulllog' )->escaped(),
@@ -549,6 +619,7 @@ class LogEventsList extends ContextSource {
 				$urlParam
 			);
 		}
+
 		if ( $logBody && $msgKey[0] ) {
 			$s .= '</div>';
 		}
@@ -560,7 +631,7 @@ class LogEventsList extends ContextSource {
 		/* hook can return false, if we don't want the message to be emitted (Wikia BugId:7093) */
 		if ( wfRunHooks( 'LogEventsListShowLogExtract', array( &$s, $types, $page, $user, $param ) ) ) {
 			// $out can be either an OutputPage object or a String-by-reference
-			if ( $out instanceof OutputPage ){
+			if ( $out instanceof OutputPage ) {
 				$out->addHTML( $s );
 			} else {
 				$out = $s;
@@ -573,26 +644,34 @@ class LogEventsList extends ContextSource {
 	/**
 	 * SQL clause to skip forbidden log types for this user
 	 *
-	 * @param $db DatabaseBase
-	 * @param $audience string, public/user
-	 * @return Mixed: string or false
+	 * @param DatabaseBase $db
+	 * @param string $audience Public/user
+	 * @param User $user User to check, or null to use $wgUser
+	 * @return string|bool String on success, false on failure.
 	 */
-	public static function getExcludeClause( $db, $audience = 'public' ) {
-		global $wgLogRestrictions, $wgUser;
+	public static function getExcludeClause( $db, $audience = 'public', User $user = null ) {
+		global $wgLogRestrictions;
+
+		if ( $audience != 'public' && $user === null ) {
+			global $wgUser;
+			$user = $wgUser;
+		}
+
 		// Reset the array, clears extra "where" clauses when $par is used
 		$hiddenLogs = array();
+
 		// Don't show private logs to unprivileged users
-		foreach( $wgLogRestrictions as $logType => $right ) {
-			if( $audience == 'public' || !$wgUser->isAllowed($right) ) {
-				$safeType = $db->strencode( $logType );
-				$hiddenLogs[] = $safeType;
+		foreach ( $wgLogRestrictions as $logType => $right ) {
+			if ( $audience == 'public' || !$user->isAllowed( $right ) ) {
+				$hiddenLogs[] = $logType;
 			}
 		}
-		if( count($hiddenLogs) == 1 ) {
+		if ( count( $hiddenLogs ) == 1 ) {
 			return 'log_type != ' . $db->addQuotes( $hiddenLogs[0] );
-		} elseif( $hiddenLogs ) {
-			return 'log_type NOT IN (' . $db->makeList($hiddenLogs) . ')';
+		} elseif ( $hiddenLogs ) {
+			return 'log_type NOT IN (' . $db->makeList( $hiddenLogs ) . ')';
 		}
+
 		return false;
 	}
- }
+}

@@ -34,10 +34,9 @@ class DBFileJournal extends FileJournal {
 
 	/**
 	 * Construct a new instance from configuration.
-	 * $config includes:
-	 *     'wiki' : wiki name to use for LoadBalancer
 	 *
-	 * @param $config Array
+	 * @param array $config Includes:
+	 *     'wiki' : wiki name to use for LoadBalancer
 	 */
 	protected function __construct( array $config ) {
 		parent::__construct( $config );
@@ -47,6 +46,8 @@ class DBFileJournal extends FileJournal {
 
 	/**
 	 * @see FileJournal::logChangeBatch()
+	 * @param array $entries
+	 * @param string $batchId
 	 * @return Status
 	 */
 	protected function doLogChangeBatch( array $entries, $batchId ) {
@@ -56,6 +57,7 @@ class DBFileJournal extends FileJournal {
 			$dbw = $this->getMasterDB();
 		} catch ( DBError $e ) {
 			$status->fatal( 'filejournal-fail-dbconnect', $this->backend );
+
 			return $status;
 		}
 
@@ -65,18 +67,22 @@ class DBFileJournal extends FileJournal {
 		foreach ( $entries as $entry ) {
 			$data[] = array(
 				'fj_batch_uuid' => $batchId,
-				'fj_backend'    => $this->backend,
-				'fj_op'         => $entry['op'],
-				'fj_path'       => $entry['path'],
-				'fj_new_sha1'   => $entry['newSha1'],
-				'fj_timestamp'  => $dbw->timestamp( $now )
+				'fj_backend' => $this->backend,
+				'fj_op' => $entry['op'],
+				'fj_path' => $entry['path'],
+				'fj_new_sha1' => $entry['newSha1'],
+				'fj_timestamp' => $dbw->timestamp( $now )
 			);
 		}
 
 		try {
 			$dbw->insert( 'filejournal', $data, __METHOD__ );
+			if ( mt_rand( 0, 99 ) == 0 ) {
+				$this->purgeOldLogs(); // occasionally delete old logs
+			}
 		} catch ( DBError $e ) {
 			$status->fatal( 'filejournal-fail-dbquery', $this->backend );
+
 			return $status;
 		}
 
@@ -84,9 +90,40 @@ class DBFileJournal extends FileJournal {
 	}
 
 	/**
+	 * @see FileJournal::doGetCurrentPosition()
+	 * @return bool|mixed The value from the field, or false on failure.
+	 */
+	protected function doGetCurrentPosition() {
+		$dbw = $this->getMasterDB();
+
+		return $dbw->selectField( 'filejournal', 'MAX(fj_id)',
+			array( 'fj_backend' => $this->backend ),
+			__METHOD__
+		);
+	}
+
+	/**
+	 * @see FileJournal::doGetPositionAtTime()
+	 * @param int|string $time Timestamp
+	 * @return bool|mixed The value from the field, or false on failure.
+	 */
+	protected function doGetPositionAtTime( $time ) {
+		$dbw = $this->getMasterDB();
+
+		$encTimestamp = $dbw->addQuotes( $dbw->timestamp( $time ) );
+
+		return $dbw->selectField( 'filejournal', 'fj_id',
+			array( 'fj_backend' => $this->backend, "fj_timestamp <= $encTimestamp" ),
+			__METHOD__,
+			array( 'ORDER BY' => 'fj_timestamp DESC' )
+		);
+	}
+
+	/**
 	 * @see FileJournal::doGetChangeEntries()
-	 * @return Array
-	 * @throws DBError
+	 * @param int $start
+	 * @param int $limit
+	 * @return array
 	 */
 	protected function doGetChangeEntries( $start, $limit ) {
 		$dbw = $this->getMasterDB();
@@ -147,6 +184,7 @@ class DBFileJournal extends FileJournal {
 			$this->dbw = $lb->getConnection( DB_MASTER, array(), $this->wiki );
 			$this->dbw->clearFlag( DBO_TRX );
 		}
+
 		return $this->dbw;
 	}
 }

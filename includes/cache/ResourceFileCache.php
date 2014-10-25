@@ -29,7 +29,7 @@
 class ResourceFileCache extends FileCacheBase {
 	protected $mCacheWorthy;
 
-	/* @TODO: configurable? */
+	/* @todo configurable? */
 	const MISS_THRESHOLD = 360; // 6/min * 60 min
 
 	/**
@@ -80,8 +80,10 @@ class ResourceFileCache extends FileCacheBase {
 			} elseif ( $query === 'debug' && $val === 'false' ) {
 				continue;
 			}
+
 			return false;
 		}
+
 		return true; // cacheable
 	}
 
@@ -104,6 +106,7 @@ class ResourceFileCache extends FileCacheBase {
 				$this->getMissesRecent() >= self::MISS_THRESHOLD // many misses
 			);
 		}
+
 		return $this->mCacheWorthy;
 	}
 }

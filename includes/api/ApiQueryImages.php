@@ -49,7 +49,7 @@ class ApiQueryImages extends ApiQueryGeneratorBase {
 	 */
 	private function run( $resultPageSet = null ) {
 		if ( $this->getPageSet()->getGoodTitleCount() == 0 ) {
-			return;	// nothing to do
+			return; // nothing to do
 		}
 
 		$params = $this->extractRequestParams();
@@ -62,10 +62,7 @@ class ApiQueryImages extends ApiQueryGeneratorBase {
 		$this->addWhereFld( 'il_from', array_keys( $this->getPageSet()->getGoodTitles() ) );
 		if ( !is_null( $params['continue'] ) ) {
 			$cont = explode( '|', $params['continue'] );
-			if ( count( $cont ) != 2 ) {
-				$this->dieUsage( 'Invalid continue param. You should pass the ' .
-					'original value returned by the previous query', '_badcontinue' );
-			}
+			$this->dieContinueUsageIf( count( $cont ) != 2 );
 			$op = $params['dir'] == 'descending' ? '<' : '>';
 			$ilfrom = intval( $cont[0] );
 			$ilto = $this->getDB()->addQuotes( $cont[1] );
@@ -82,9 +79,9 @@ class ApiQueryImages extends ApiQueryGeneratorBase {
 			$this->addOption( 'ORDER BY', 'il_to' . $sort );
 		} else {
 			$this->addOption( 'ORDER BY', array(
-						'il_from' . $sort,
-						'il_to' . $sort
-			));
+				'il_from' . $sort,
+				'il_to' . $sort
+			) );
 		}
 		$this->addOption( 'LIMIT', $params['limit'] + 1 );
 
@@ -167,7 +164,8 @@ class ApiQueryImages extends ApiQueryGeneratorBase {
 		return array(
 			'limit' => 'How many images to return',
 			'continue' => 'When more results are available, use this to continue',
-			'images' => 'Only list these images. Useful for checking whether a certain page has a certain Image.',
+			'images' => 'Only list these images. Useful for checking whether a ' .
+				'certain page has a certain Image.',
 			'dir' => 'The direction in which to list',
 		);
 	}
@@ -182,27 +180,19 @@ class ApiQueryImages extends ApiQueryGeneratorBase {
 	}
 
 	public function getDescription() {
-		return 'Returns all images contained on the given page(s)';
-	}
-
-	public function getPossibleErrors() {
-		return array_merge( parent::getPossibleErrors(), array(
-			array( 'code' => '_badcontinue', 'info' => 'Invalid continue param. You should pass the original value returned by the previous query' ),
-		) );
+		return 'Returns all images contained on the given page(s).';
 	}
 
 	public function getExamples() {
 		return array(
-			'api.php?action=query&prop=images&titles=Main%20Page' => 'Get a list of images used in the [[Main Page]]',
-			'api.php?action=query&generator=images&titles=Main%20Page&prop=info' => 'Get information about all images used in the [[Main Page]]',
+			'api.php?action=query&prop=images&titles=Main%20Page'
+				=> 'Get a list of images used in the [[Main Page]]',
+			'api.php?action=query&generator=images&titles=Main%20Page&prop=info'
+				=> 'Get information about all images used in the [[Main Page]]',
 		);
 	}
 
 	public function getHelpUrls() {
 		return 'https://www.mediawiki.org/wiki/API:Properties#images_.2F_im';
-	}
-
-	public function getVersion() {
-		return __CLASS__ . ': $Id$';
 	}
 }

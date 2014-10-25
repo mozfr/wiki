@@ -7,7 +7,7 @@
  *   --dry-run  don't actually try moving them
  *
  * Copyright © 2005 Brion Vibber <brion@pobox.com>
- * http://www.mediawiki.org/
+ * https://www.mediawiki.org/
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
  * @ingroup Maintenance
  */
 
-require_once( __DIR__ . '/cleanupTable.inc' );
+require_once __DIR__ . '/cleanupTable.inc';
 
 /**
  * Maintenance script to clean up broken page links when somebody turns on $wgCapitalLinks.
@@ -103,4 +103,4 @@ class CapsCleanup extends TableCleanup {
 }
 
 $maintClass = "CapsCleanup";
-require_once( RUN_MAINTENANCE_IF_MAIN );
+require_once RUN_MAINTENANCE_IF_MAIN;

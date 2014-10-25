@@ -5,6 +5,7 @@
  * @file
  * @ingroup Extensions
  */
+// @codingStandardsIgnoreFile
 
 $specialPageAliases = array();
 
@@ -23,7 +24,7 @@ $specialPageAliases['arz'] = array(
 	'Renameuser' => array( 'سمّى_تانى_يوزر' ),
 );
 
-/** Assamese (অসমীয়া) */
+/** Assamese (অসমীয়া) */
 $specialPageAliases['as'] = array(
 	'Renameuser' => array( 'সদস্য_পুনৰ্নামকৰণ' ),
 );
@@ -58,7 +59,12 @@ $specialPageAliases['ca'] = array(
 	'Renameuser' => array( 'Reanomena_usuari' ),
 );
 
-/** Czech (česky) */
+/** Chechen (нохчийн) */
+$specialPageAliases['ce'] = array(
+	'Renameuser' => array( 'Декъашхочун_цӀе_хийца' ),
+);
+
+/** Czech (čeština) */
 $specialPageAliases['cs'] = array(
 	'Renameuser' => array( 'Přejmenovat_uživatele' ),
 );
@@ -70,7 +76,7 @@ $specialPageAliases['de'] = array(
 
 /** Zazaki (Zazaki) */
 $specialPageAliases['diq'] = array(
-	'Renameuser' => array( 'NamedayışêKarberi' ),
+	'Renameuser' => array( 'NamedayışéKarberi' ),
 );
 
 /** Lower Sorbian (dolnoserbski) */
@@ -80,7 +86,7 @@ $specialPageAliases['dsb'] = array(
 
 /** Divehi (ދިވެހިބަސް) */
 $specialPageAliases['dv'] = array(
-	'Renameuser' => array( 'މެމްބަރުގެ ނަން ބަދަލު ކުރައްވާ' ),
+	'Renameuser' => array( 'މެމްބަރުގެ_ނަން_ބަދަލު_ކުރައްވާ' ),
 );
 
 /** Greek (Ελληνικά) */
@@ -125,7 +131,7 @@ $specialPageAliases['frp'] = array(
 
 /** Galician (galego) */
 $specialPageAliases['gl'] = array(
-	'Renameuser' => array( 'Renomear_o_usuario' ),
+	'Renameuser' => array( 'Renomear_o_usuario', 'Renomear_usuario', 'Renomear_a_usuaria', 'Renomear_usuaria' ),
 );
 
 /** Swiss German (Alemannisch) */
@@ -190,7 +196,7 @@ $specialPageAliases['km'] = array(
 
 /** Korean (한국어) */
 $specialPageAliases['ko'] = array(
-	'Renameuser' => array( '이름바꾸기', '계정이름바꾸기', '사용자이름바꾸기' ),
+	'Renameuser' => array( '이름바꾸기', '사용자이름바꾸기', '계정이름바꾸기' ),
 );
 
 /** Colognian (Ripoarisch) */
@@ -198,9 +204,14 @@ $specialPageAliases['ksh'] = array(
 	'Renameuser' => array( 'Metmaacher ömnänne', 'Medmaacher ömnänne', 'Metmaacher ömnenne', 'Medmaacher ömnenne', 'Metmaacher ömdäufe', 'Medmaacher ömdäufe' ),
 );
 
+/** Cornish (kernowek) */
+$specialPageAliases['kw'] = array(
+	'Renameuser' => array( 'DashenwelDevnydhyer' ),
+);
+
 /** Latin (Latina) */
 $specialPageAliases['la'] = array(
-	'Renameuser' => array( 'Usorem renominare' ),
+	'Renameuser' => array( 'Usorem_renominare' ),
 );
 
 /** Luxembourgish (Lëtzebuergesch) */
@@ -233,12 +244,12 @@ $specialPageAliases['mt'] = array(
 	'Renameuser' => array( 'BiddelIsemUtent' ),
 );
 
-/** Norwegian Bokmål (norsk (bokmål)‎) */
+/** Norwegian Bokmål (norsk bokmål) */
 $specialPageAliases['nb'] = array(
 	'Renameuser' => array( 'Gi_en_bruker_nytt_navn' ),
 );
 
-/** Nedersaksisch (Nedersaksisch) */
+/** Low Saxon (Netherlands) (Nedersaksies) */
 $specialPageAliases['nds-nl'] = array(
 	'Renameuser' => array( 'Gebruker_herneumen' ),
 );
@@ -248,7 +259,7 @@ $specialPageAliases['nl'] = array(
 	'Renameuser' => array( 'GebruikerHernoemen' ),
 );
 
-/** Norwegian Nynorsk (norsk (nynorsk)‎) */
+/** Norwegian Nynorsk (norsk nynorsk) */
 $specialPageAliases['nn'] = array(
 	'Renameuser' => array( 'Døyp_om_brukar' ),
 );
@@ -288,6 +299,11 @@ $specialPageAliases['ru'] = array(
 	'Renameuser' => array( 'Переименовать_участника' ),
 );
 
+/** Sicilian (sicilianu) */
+$specialPageAliases['scn'] = array(
+	'Renameuser' => array( 'RinominaUtente' ),
+);
+
 /** Slovak (slovenčina) */
 $specialPageAliases['sk'] = array(
 	'Renameuser' => array( 'PremenovaťPoužívateľa' ),
@@ -300,7 +316,7 @@ $specialPageAliases['sq'] = array(
 
 /** Serbian (Cyrillic script) (српски (ћирилица)‎) */
 $specialPageAliases['sr-ec'] = array(
-	'Renameuser' => array( 'Преименуј_корисника' ),
+	'Renameuser' => array( 'ПреименујКорисника', 'Преименуј_корисника' ),
 );
 
 /** Swedish (svenska) */
@@ -328,6 +344,11 @@ $specialPageAliases['tr'] = array(
 	'Renameuser' => array( 'KullanıcıAdınıDeğiştir', 'KullanıcıİsminiDeğiştir' ),
 );
 
+/** Ukrainian (українська) */
+$specialPageAliases['uk'] = array(
+	'Renameuser' => array( 'Перейменувати_користувача' ),
+);
+
 /** Vietnamese (Tiếng Việt) */
 $specialPageAliases['vi'] = array(
 	'Renameuser' => array( 'Đổi_tên_thành_viên', 'Đổi_tên_người_dùng' ),
@@ -336,4 +357,9 @@ $specialPageAliases['vi'] = array(
 /** Simplified Chinese (中文（简体）‎) */
 $specialPageAliases['zh-hans'] = array(
 	'Renameuser' => array( '重命名用户' ),
+);
+
+/** Traditional Chinese (中文（繁體）‎) */
+$specialPageAliases['zh-hant'] = array(
+	'Renameuser' => array( '重命名用戶' ),
 );

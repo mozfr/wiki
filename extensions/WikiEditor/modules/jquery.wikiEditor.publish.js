@@ -1,4 +1,5 @@
 /* Publish module for wikiEditor */
+/*jshint onevar:false */
 ( function ( $ ) {
 
 $.wikiEditor.modules.publish = {
@@ -31,7 +32,7 @@ fn: {
 	 * @param context Context object of editor to create module in
 	 * @param config Configuration object to create module from
 	 */
-	create: function ( context, config ) {
+	create: function ( context ) {
 		// Build the dialog behind the Publish button
 		var dialogID = 'wikiEditor-' + context.instance + '-dialog';
 		$.wikiEditor.modules.dialogs.fn.create(
@@ -89,22 +90,25 @@ fn: {
 						);
 						/* END OF REALLY DIRTY HACK */
 
-						if ( $( '#wpMinoredit' ).length === 0 )
+						if ( $( '#wpMinoredit' ).length === 0 ) {
 							$( '#wikiEditor-' + context.instance + '-dialog-minor' ).hide();
-						else if ( $( '#wpMinoredit' ).is( ':checked' ) )
+						} else if ( $( '#wpMinoredit' ).prop( 'checked' ) ) {
 							$( '#wikiEditor-' + context.instance + '-dialog-minor' )
 								.prop( 'checked', true );
-						if ( $( '#wpWatchthis' ).length === 0 )
+						}
+						if ( $( '#wpWatchthis' ).length === 0 ) {
 							$( '#wikiEditor-' + context.instance + '-dialog-watch' ).hide();
-						else if ( $( '#wpWatchthis' ).is( ':checked' ) )
+						} else if ( $( '#wpWatchthis' ).prop( 'checked' ) ) {
 							$( '#wikiEditor-' + context.instance + '-dialog-watch' )
 								.prop( 'checked', true );
+							}
 
 						$(this).find( 'form' ).submit( function ( e ) {
 							$(this).closest( '.ui-dialog' ).find( 'button:first' ).click();
 							e.preventDefault();
 						});
 					},
+					immediateCreate: true,
 					dialog: {
 						buttons: {
 							'wikieditor-publish-dialog-publish': function () {
@@ -144,7 +148,10 @@ fn: {
 
 		context.fn.addButton( {
 			'captionMsg': 'wikieditor-publish-button-cancel',
-			'action': function () { }
+			'action': function () {
+				window.location.href = $( '#mw-editform-cancel' ).attr( 'href' );
+				return false;
+			}
 		} );
 	}
 }

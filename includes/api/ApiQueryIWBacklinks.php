@@ -56,10 +56,7 @@ class ApiQueryIWBacklinks extends ApiQueryGeneratorBase {
 
 		if ( !is_null( $params['continue'] ) ) {
 			$cont = explode( '|', $params['continue'] );
-			if ( count( $cont ) != 3 ) {
-				$this->dieUsage( 'Invalid continue param. You should pass the ' .
-					'original value returned by the previous query', '_badcontinue' );
-			}
+			$this->dieContinueUsageIf( count( $cont ) != 3 );
 
 			$db = $this->getDB();
 			$op = $params['dir'] == 'descending' ? '<' : '>';
@@ -95,14 +92,14 @@ class ApiQueryIWBacklinks extends ApiQueryGeneratorBase {
 				$this->addOption( 'ORDER BY', array(
 					'iwl_title' . $sort,
 					'iwl_from' . $sort
-				));
+				) );
 			}
 		} else {
 			$this->addOption( 'ORDER BY', array(
 				'iwl_prefix' . $sort,
 				'iwl_title' . $sort,
 				'iwl_from' . $sort
-			));
+			) );
 		}
 
 		$this->addOption( 'LIMIT', $params['limit'] + 1 );
@@ -114,10 +111,15 @@ class ApiQueryIWBacklinks extends ApiQueryGeneratorBase {
 		$count = 0;
 		$result = $this->getResult();
 		foreach ( $res as $row ) {
-			if ( ++ $count > $params['limit'] ) {
-				// We've reached the one extra which shows that there are additional pages to be had. Stop here...
-				// Continue string preserved in case the redirect query doesn't pass the limit
-				$this->setContinueEnumParameter( 'continue', "{$row->iwl_prefix}|{$row->iwl_title}|{$row->iwl_from}" );
+			if ( ++$count > $params['limit'] ) {
+				// We've reached the one extra which shows that there are
+				// additional pages to be had. Stop here...
+				// Continue string preserved in case the redirect query doesn't
+				// pass the limit
+				$this->setContinueEnumParameter(
+					'continue',
+					"{$row->iwl_prefix}|{$row->iwl_title}|{$row->iwl_from}"
+				);
 				break;
 			}
 
@@ -143,7 +145,10 @@ class ApiQueryIWBacklinks extends ApiQueryGeneratorBase {
 
 				$fit = $result->addValue( array( 'query', $this->getModuleName() ), null, $entry );
 				if ( !$fit ) {
-					$this->setContinueEnumParameter( 'continue', "{$row->iwl_prefix}|{$row->iwl_title}|{$row->iwl_from}" );
+					$this->setContinueEnumParameter(
+						'continue',
+						"{$row->iwl_prefix}|{$row->iwl_title}|{$row->iwl_from}"
+					);
 					break;
 				}
 			}
@@ -226,14 +231,13 @@ class ApiQueryIWBacklinks extends ApiQueryGeneratorBase {
 		return array( 'Find all pages that link to the given interwiki link.',
 			'Can be used to find all links with a prefix, or',
 			'all links to a title (with a given prefix).',
-			'Using neither parameter is effectively "All IW Links"',
+			'Using neither parameter is effectively "All IW Links".',
 		);
 	}
 
 	public function getPossibleErrors() {
 		return array_merge( parent::getPossibleErrors(), array(
 			array( 'missingparam', 'prefix' ),
-			array( 'code' => '_badcontinue', 'info' => 'Invalid continue param. You should pass the original value returned by the previous query' ),
 		) );
 	}
 
@@ -244,7 +248,7 @@ class ApiQueryIWBacklinks extends ApiQueryGeneratorBase {
 		);
 	}
 
-	public function getVersion() {
-		return __CLASS__ . ': $Id$';
+	public function getHelpUrls() {
+		return 'https://www.mediawiki.org/wiki/API:Iwbacklinks';
 	}
 }

@@ -21,7 +21,7 @@
  * @ingroup Benchmark
  */
 
-require_once( __DIR__ . '/Benchmarker.php' );
+require_once __DIR__ . '/Benchmarker.php';
 
 /**
  * Maintenance script that benchmarks SQL DELETE vs SQL TRUNCATE.
@@ -70,7 +70,7 @@ class BenchmarkDeleteTruncate extends Benchmarker {
 	}
 
 	/**
-	 * @param  $dbw DatabaseBase
+	 * @param $dbw DatabaseBase
 	 * @return void
 	 */
 	private function insertData( $dbw ) {
@@ -83,7 +83,7 @@ class BenchmarkDeleteTruncate extends Benchmarker {
 	}
 
 	/**
-	 * @param  $dbw DatabaseBase
+	 * @param $dbw DatabaseBase
 	 * @return void
 	 */
 	private function delete( $dbw ) {
@@ -91,7 +91,7 @@ class BenchmarkDeleteTruncate extends Benchmarker {
 	}
 
 	/**
-	 * @param  $dbw DatabaseBase
+	 * @param $dbw DatabaseBase
 	 * @return void
 	 */
 	private function truncate( $dbw ) {
@@ -101,4 +101,4 @@ class BenchmarkDeleteTruncate extends Benchmarker {
 }
 
 $maintClass = "BenchmarkDeleteTruncate";
-require_once( RUN_MAINTENANCE_IF_MAIN );
+require_once RUN_MAINTENANCE_IF_MAIN;

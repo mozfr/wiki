@@ -25,12 +25,11 @@
  * @file ORMResult.php
  * @ingroup ORM
  *
- * @licence GNU GPL v2 or later
+ * @license GNU GPL v2 or later
  * @author Jeroen De Dauw < jeroendedauw@gmail.com >
  */
 
 class ORMResult implements ORMIterator {
-
 	/**
 	 * @var ResultWrapper
 	 */
@@ -119,5 +118,4 @@ class ORMResult implements ORMIterator {
 	public function valid() {
 		return $this->current !== false;
 	}
-
 }

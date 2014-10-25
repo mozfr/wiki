@@ -28,12 +28,14 @@
  * This sort of acts as an intermediary between MediaHandler::getMetadata
  * and the various metadata extractors.
  *
- * @todo other image formats.
+ * @todo Other image formats.
  * @ingroup Media
  */
 class BitmapMetadataHandler {
-
+	/** @var array */
 	private $metadata = array();
+
+	/** @var array Metadata priority */
 	private $metaPriority = array(
 		20 => array( 'other' ),
 		40 => array( 'native' ),
@@ -44,17 +46,19 @@ class BitmapMetadataHandler {
 		100 => array( 'iptc-bad-hash' ),
 		120 => array( 'exif' ),
 	);
+
+	/** @var string */
 	private $iptcType = 'iptc-no-hash';
 
 	/**
-	* This does the photoshop image resource app13 block
-	* of interest, IPTC-IIM metadata is stored here.
-	*
-	* Mostly just calls doPSIR and doIPTC
-	*
-	* @param String $app13 String containing app13 block from jpeg file
-	*/
-	private function doApp13 ( $app13 ) {
+	 * This does the photoshop image resource app13 block
+	 * of interest, IPTC-IIM metadata is stored here.
+	 *
+	 * Mostly just calls doPSIR and doIPTC
+	 *
+	 * @param string $app13 String containing app13 block from jpeg file
+	 */
+	private function doApp13( $app13 ) {
 		try {
 			$this->iptcType = JpegMetadataExtractor::doPSIR( $app13 );
 		} catch ( MWException $e ) {
@@ -69,7 +73,6 @@ class BitmapMetadataHandler {
 		$this->addMetadata( $iptc, $this->iptcType );
 	}
 
-
 	/**
 	 * Get exif info using exif class.
 	 * Basically what used to be in BitmapHandler::getMetadata().
@@ -77,10 +80,10 @@ class BitmapMetadataHandler {
 	 *
 	 * Parameters are passed to the Exif class.
 	 *
-	 * @param $filename string
-	 * @param $byteOrder string
+	 * @param string $filename
+	 * @param string $byteOrder
 	 */
-	function getExif ( $filename, $byteOrder ) {
+	function getExif( $filename, $byteOrder ) {
 		global $wgShowEXIF;
 		if ( file_exists( $filename ) && $wgShowEXIF ) {
 			$exif = new Exif( $filename, $byteOrder );
@@ -90,13 +93,14 @@ class BitmapMetadataHandler {
 			}
 		}
 	}
+
 	/** Add misc metadata. Warning: atm if the metadata category
-	* doesn't have a priority, it will be silently discarded.
-	*
-	* @param Array $metaArray array of metadata values
-	* @param string $type type. defaults to other. if two things have the same type they're merged
-	*/
-	function addMetadata ( $metaArray, $type = 'other' ) {
+	 * doesn't have a priority, it will be silently discarded.
+	 *
+	 * @param array $metaArray array of metadata values
+	 * @param string $type Type. defaults to other. if two things have the same type they're merged
+	 */
+	function addMetadata( $metaArray, $type = 'other' ) {
 		if ( isset( $this->metadata[$type] ) ) {
 			/* merge with old data */
 			$metaArray = $metaArray + $this->metadata[$type];
@@ -106,18 +110,18 @@ class BitmapMetadataHandler {
 	}
 
 	/**
-	* Merge together the various types of metadata
-	* the different types have different priorites,
-	* and are merged in order.
-	*
-	* This function is generally called by the media handlers' getMetadata()
-	*
-	* @return Array metadata array
-	*/
-	function getMetadataArray () {
+	 * Merge together the various types of metadata
+	 * the different types have different priorites,
+	 * and are merged in order.
+	 *
+	 * This function is generally called by the media handlers' getMetadata()
+	 *
+	 * @return array Metadata array
+	 */
+	function getMetadataArray() {
 		// this seems a bit ugly... This is all so its merged in right order
 		// based on the MWG recomendation.
-		$temp = Array();
+		$temp = array();
 		krsort( $this->metaPriority );
 		foreach ( $this->metaPriority as $pri ) {
 			foreach ( $pri as $type ) {
@@ -139,25 +143,26 @@ class BitmapMetadataHandler {
 				}
 			}
 		}
+
 		return $temp;
 	}
 
 	/** Main entry point for jpeg's.
 	 *
-	 * @param $filename string filename (with full path)
-	 * @return array metadata result array.
+	 * @param string $filename filename (with full path)
+	 * @return array Metadata result array.
 	 * @throws MWException on invalid file.
 	 */
-	static function Jpeg ( $filename ) {
+	static function Jpeg( $filename ) {
 		$showXMP = function_exists( 'xml_parser_create_ns' );
 		$meta = new self();
 
 		$seg = JpegMetadataExtractor::segmentSplitter( $filename );
 		if ( isset( $seg['COM'] ) && isset( $seg['COM'][0] ) ) {
-			$meta->addMetadata( Array( 'JPEGFileComment' => $seg['COM'] ), 'native' );
+			$meta->addMetadata( array( 'JPEGFileComment' => $seg['COM'] ), 'native' );
 		}
 		if ( isset( $seg['PSIR'] ) && count( $seg['PSIR'] ) > 0 ) {
-			foreach( $seg['PSIR'] as $curPSIRValue ) {
+			foreach ( $seg['PSIR'] as $curPSIRValue ) {
 				$meta->doApp13( $curPSIRValue );
 			}
 		}
@@ -169,7 +174,6 @@ class BitmapMetadataHandler {
 				 * is not well tested and a bit fragile.
 				 */
 				$xmp->parseExtended( $xmpExt );
-
 			}
 			$res = $xmp->getResults();
 			foreach ( $res as $type => $array ) {
@@ -179,6 +183,7 @@ class BitmapMetadataHandler {
 		if ( isset( $seg['byteOrder'] ) ) {
 			$meta->getExif( $filename, $seg['byteOrder'] );
 		}
+
 		return $meta->getMetadataArray();
 	}
 
@@ -187,15 +192,17 @@ class BitmapMetadataHandler {
 	 * merge the png various tEXt chunks to that
 	 * are interesting, but for now it only does XMP
 	 *
-	 * @param $filename String full path to file
-	 * @return Array Array for storage in img_metadata.
+	 * @param string $filename Full path to file
+	 * @return array Array for storage in img_metadata.
 	 */
-	static public function PNG ( $filename ) {
+	public static function PNG( $filename ) {
 		$showXMP = function_exists( 'xml_parser_create_ns' );
 
 		$meta = new self();
 		$array = PNGMetadataExtractor::getMetadata( $filename );
-		if ( isset( $array['text']['xmp']['x-default'] ) && $array['text']['xmp']['x-default'] !== '' && $showXMP ) {
+		if ( isset( $array['text']['xmp']['x-default'] )
+			&& $array['text']['xmp']['x-default'] !== '' && $showXMP
+		) {
 			$xmp = new XMPReader();
 			$xmp->parse( $array['text']['xmp']['x-default'] );
 			$xmpRes = $xmp->getResults();
@@ -208,6 +215,7 @@ class BitmapMetadataHandler {
 		unset( $array['text'] );
 		$array['metadata'] = $meta->getMetadataArray();
 		$array['metadata']['_MW_PNG_VERSION'] = PNGMetadataExtractor::VERSION;
+
 		return $array;
 	}
 
@@ -216,10 +224,10 @@ class BitmapMetadataHandler {
 	 * They don't really have native metadata, so just merges together
 	 * XMP and image comment.
 	 *
-	 * @param $filename string full path to file
-	 * @return Array metadata array
+	 * @param string $filename full path to file
+	 * @return array Metadata array
 	 */
-	static public function GIF ( $filename ) {
+	public static function GIF( $filename ) {
 
 		$meta = new self();
 		$baseArray = GIFMetadataExtractor::getMetadata( $filename );
@@ -235,14 +243,14 @@ class BitmapMetadataHandler {
 			foreach ( $xmpRes as $type => $xmpSection ) {
 				$meta->addMetadata( $xmpSection, $type );
 			}
-
 		}
 
 		unset( $baseArray['comment'] );
 		unset( $baseArray['xmp'] );
-	
+
 		$baseArray['metadata'] = $meta->getMetadataArray();
 		$baseArray['metadata']['_MW_GIF_VERSION'] = GIFMetadataExtractor::VERSION;
+
 		return $baseArray;
 	}
 
@@ -252,14 +260,14 @@ class BitmapMetadataHandler {
 	 * but needs some further processing because PHP's exif support
 	 * is stupid...)
 	 *
-	 * @todo Add XMP support, so this function actually makes
-	 * sense to put here.
+	 * @todo Add XMP support, so this function actually makes sense to put here.
 	 *
 	 * The various exceptions this throws are caught later.
-	 * @param $filename String
-	 * @return Array The metadata.
+	 * @param string $filename
+	 * @throws MWException
+	 * @return array The metadata.
 	 */
-	static public function Tiff ( $filename ) {
+	public static function Tiff( $filename ) {
 		if ( file_exists( $filename ) ) {
 			$byteOrder = self::getTiffByteOrder( $filename );
 			if ( !$byteOrder ) {
@@ -269,6 +277,7 @@ class BitmapMetadataHandler {
 			$data = $exif->getFilteredData();
 			if ( $data ) {
 				$data['MEDIAWIKI_EXIF_VERSION'] = Exif::version();
+
 				return $data;
 			} else {
 				throw new MWException( "Could not extract data from tiff file $filename" );
@@ -277,20 +286,23 @@ class BitmapMetadataHandler {
 			throw new MWException( "File doesn't exist - $filename" );
 		}
 	}
+
 	/**
 	 * Read the first 2 bytes of a tiff file to figure out
 	 * Little Endian or Big Endian. Needed for exif stuff.
 	 *
-	 * @param $filename String The filename
-	 * @return String 'BE' or 'LE' or false
+	 * @param string $filename The filename
+	 * @return string 'BE' or 'LE' or false
 	 */
 	static function getTiffByteOrder( $filename ) {
 		$fh = fopen( $filename, 'rb' );
-		if ( !$fh ) return false;
+		if ( !$fh ) {
+			return false;
+		}
 		$head = fread( $fh, 2 );
 		fclose( $fh );
 
-		switch( $head ) {
+		switch ( $head ) {
 			case 'II':
 				return 'LE'; // II for intel.
 			case 'MM':
@@ -300,6 +312,4 @@ class BitmapMetadataHandler {
 
 		}
 	}
-
-
 }

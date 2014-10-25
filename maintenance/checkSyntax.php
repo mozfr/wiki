@@ -21,7 +21,7 @@
  * @ingroup Maintenance
  */
 
-require_once( __DIR__ . '/Maintenance.php' );
+require_once __DIR__ . '/Maintenance.php';
 
 /**
  * Maintenance script to check syntax of all PHP files in MediaWiki.
@@ -153,9 +153,6 @@ class CheckSyntax extends Maintenance {
 		if ( file_exists( "$IP/LocalSettings.php" ) ) {
 			$this->mFiles[] = "$IP/LocalSettings.php";
 		}
-		if ( file_exists( "$IP/AdminSettings.php" ) ) {
-			$this->mFiles[] = "$IP/AdminSettings.php";
-		}
 
 		$this->output( 'done.', 'listfiles' );
 	}
@@ -221,12 +218,14 @@ class CheckSyntax extends Maintenance {
 	private function isSuitableFile( $file ) {
 		$file = str_replace( '\\', '/', $file );
 		$ext = pathinfo( $file, PATHINFO_EXTENSION );
-		if ( $ext != 'php' && $ext != 'inc' && $ext != 'php5' )
+		if ( $ext != 'php' && $ext != 'inc' && $ext != 'php5' ) {
 			return false;
+		}
 		foreach ( $this->mIgnorePaths as $regex ) {
 			$m = array();
-			if ( preg_match( "~{$regex}~", $file, $m ) )
+			if ( preg_match( "~{$regex}~", $file, $m ) ) {
 				return false;
+			}
 		}
 		return true;
 	}
@@ -328,14 +327,15 @@ class CheckSyntax extends Maintenance {
 	private function checkForMistakes( $file ) {
 		foreach ( $this->mNoStyleCheckPaths as $regex ) {
 			$m = array();
-			if ( preg_match( "~{$regex}~", $file, $m ) )
+			if ( preg_match( "~{$regex}~", $file, $m ) ) {
 				return;
+			}
 		}
 
 		$text = file_get_contents( $file );
 		$tokens = token_get_all( $text );
 
-		$this->checkEvilToken( $file, $tokens, '@', 'Error supression operator (@)');
+		$this->checkEvilToken( $file, $tokens, '@', 'Error supression operator (@)' );
 		$this->checkRegex( $file, $text, '/^[\s\r\n]+<\?/', 'leading whitespace' );
 		$this->checkRegex( $file, $text, '/\?>[\s\r\n]*$/', 'trailing ?>' );
 		$this->checkRegex( $file, $text, '/^[\xFF\xFE\xEF]/', 'byte-order mark' );
@@ -367,5 +367,4 @@ class CheckSyntax extends Maintenance {
 }
 
 $maintClass = "CheckSyntax";
-require_once( RUN_MAINTENANCE_IF_MAIN );
-
+require_once RUN_MAINTENANCE_IF_MAIN;

@@ -5,6 +5,7 @@
  * @file
  * @ingroup Extensions
  */
+// @codingStandardsIgnoreFile
 
 $specialPageAliases = array();
 
@@ -21,6 +22,16 @@ $specialPageAliases['ar'] = array(
 /** Egyptian Spoken Arabic (مصرى) */
 $specialPageAliases['arz'] = array(
 	'Captcha' => array( 'كابتشا' ),
+);
+
+/** Min Dong Chinese (Mìng-dĕ̤ng-ngṳ̄) */
+$specialPageAliases['cdo'] = array(
+	'Captcha' => array( '驗證碼' ),
+);
+
+/** Zazaki (Zazaki) */
+$specialPageAliases['diq'] = array(
+	'Captcha' => array( 'Kodaİtimadi' ),
 );
 
 /** Esperanto (Esperanto) */
@@ -46,6 +57,11 @@ $specialPageAliases['fi'] = array(
 /** Galician (galego) */
 $specialPageAliases['gl'] = array(
 	'Captcha' => array( 'Captcha' ),
+);
+
+/** Hawaiian (Hawai`i) */
+$specialPageAliases['haw'] = array(
+	'Captcha' => array( 'Kapakā', 'Kapaka' ),
 );
 
 /** Hindi (हिन्दी) */

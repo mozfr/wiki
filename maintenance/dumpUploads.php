@@ -21,7 +21,7 @@
  * @ingroup Maintenance
  */
 
-require_once( __DIR__ . '/Maintenance.php' );
+require_once __DIR__ . '/Maintenance.php';
 
 /**
  * Maintenance script to dump a the list of files uploaded,
@@ -64,7 +64,7 @@ By default, outputs relative paths against the parent directory of \$wgUploadDir
 				$this->mSharedSupplement = true;
 			}
 		}
-		$this-> { $this->mAction } ( $this->mShared );
+		$this->{ $this->mAction } ( $this->mShared );
 		if ( $this->mSharedSupplement ) {
 			$this->fetchUsed( true );
 		}
@@ -125,4 +125,4 @@ By default, outputs relative paths against the parent directory of \$wgUploadDir
 }
 
 $maintClass = "UploadDumper";
-require_once( RUN_MAINTENANCE_IF_MAIN );
+require_once RUN_MAINTENANCE_IF_MAIN;

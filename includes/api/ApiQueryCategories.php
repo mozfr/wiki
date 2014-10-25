@@ -49,11 +49,10 @@ class ApiQueryCategories extends ApiQueryGeneratorBase {
 
 	/**
 	 * @param $resultPageSet ApiPageSet
-	 * @return
 	 */
 	private function run( $resultPageSet = null ) {
 		if ( $this->getPageSet()->getGoodTitleCount() == 0 ) {
-			return;	// nothing to do
+			return; // nothing to do
 		}
 
 		$params = $this->extractRequestParams();
@@ -85,10 +84,7 @@ class ApiQueryCategories extends ApiQueryGeneratorBase {
 
 		if ( !is_null( $params['continue'] ) ) {
 			$cont = explode( '|', $params['continue'] );
-			if ( count( $cont ) != 2 ) {
-				$this->dieUsage( "Invalid continue param. You should pass the " .
-					"original value returned by the previous query", "_badcontinue" );
-			}
+			$this->dieContinueUsageIf( count( $cont ) != 2 );
 			$op = $params['dir'] == 'descending' ? '<' : '>';
 			$clfrom = intval( $cont[0] );
 			$clto = $this->getDB()->addQuotes( $cont[1] );
@@ -102,8 +98,7 @@ class ApiQueryCategories extends ApiQueryGeneratorBase {
 		if ( isset( $show['hidden'] ) && isset( $show['!hidden'] ) ) {
 			$this->dieUsageMsg( 'show' );
 		}
-		if ( isset( $show['hidden'] ) || isset( $show['!hidden'] ) || isset( $prop['hidden'] ) )
-		{
+		if ( isset( $show['hidden'] ) || isset( $show['!hidden'] ) || isset( $prop['hidden'] ) ) {
 			$this->addOption( 'STRAIGHT_JOIN' );
 			$this->addTables( array( 'page', 'page_props' ) );
 			$this->addFieldsIf( 'pp_propname', isset( $prop['hidden'] ) );
@@ -130,9 +125,9 @@ class ApiQueryCategories extends ApiQueryGeneratorBase {
 			$this->addOption( 'ORDER BY', 'cl_to' . $sort );
 		} else {
 			$this->addOption( 'ORDER BY', array(
-						'cl_from' . $sort,
-						'cl_to' . $sort
-			));
+				'cl_from' . $sort,
+				'cl_to' . $sort
+			) );
 		}
 
 		$res = $this->select( __METHOD__ );
@@ -177,7 +172,7 @@ class ApiQueryCategories extends ApiQueryGeneratorBase {
 					break;
 				}
 
-				$titles[] = Title :: makeTitle( NS_CATEGORY, $row->cl_to );
+				$titles[] = Title::makeTitle( NS_CATEGORY, $row->cl_to );
 			}
 			$resultPageSet->populateFromTitles( $titles );
 		}
@@ -187,7 +182,7 @@ class ApiQueryCategories extends ApiQueryGeneratorBase {
 		return array(
 			'prop' => array(
 				ApiBase::PARAM_ISMULTI => true,
-				ApiBase::PARAM_TYPE => array (
+				ApiBase::PARAM_TYPE => array(
 					'sortkey',
 					'timestamp',
 					'hidden',
@@ -225,14 +220,16 @@ class ApiQueryCategories extends ApiQueryGeneratorBase {
 		return array(
 			'prop' => array(
 				'Which additional properties to get for each category',
-				' sortkey    - Adds the sortkey (hexadecimal string) and sortkey prefix (human-readable part) for the category',
+				' sortkey    - Adds the sortkey (hexadecimal string) and sortkey prefix',
+				'              (human-readable part) for the category',
 				' timestamp  - Adds timestamp of when the category was added',
 				' hidden     - Tags categories that are hidden with __HIDDENCAT__',
 			),
 			'limit' => 'How many categories to return',
 			'show' => 'Which kind of categories to show',
 			'continue' => 'When more results are available, use this to continue',
-			'categories' => 'Only list these categories. Useful for checking whether a certain page is in a certain category',
+			'categories' => 'Only list these categories. Useful for checking ' .
+				'whether a certain page is in a certain category',
 			'dir' => 'The direction in which to list',
 		);
 	}
@@ -257,7 +254,7 @@ class ApiQueryCategories extends ApiQueryGeneratorBase {
 	}
 
 	public function getDescription() {
-		return 'List all categories the page(s) belong to';
+		return 'List all categories the page(s) belong to.';
 	}
 
 	public function getPossibleErrors() {
@@ -268,16 +265,14 @@ class ApiQueryCategories extends ApiQueryGeneratorBase {
 
 	public function getExamples() {
 		return array(
-			'api.php?action=query&prop=categories&titles=Albert%20Einstein' => 'Get a list of categories [[Albert Einstein]] belongs to',
-			'api.php?action=query&generator=categories&titles=Albert%20Einstein&prop=info' => 'Get information about all categories used in the [[Albert Einstein]]',
+			'api.php?action=query&prop=categories&titles=Albert%20Einstein'
+				=> 'Get a list of categories [[Albert Einstein]] belongs to',
+			'api.php?action=query&generator=categories&titles=Albert%20Einstein&prop=info'
+				=> 'Get information about all categories used in the [[Albert Einstein]]',
 		);
 	}
 
 	public function getHelpUrls() {
 		return 'https://www.mediawiki.org/wiki/API:Properties#categories_.2F_cl';
-	}
-
-	public function getVersion() {
-		return __CLASS__ . ': $Id$';
 	}
 }

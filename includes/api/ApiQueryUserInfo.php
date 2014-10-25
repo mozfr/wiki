@@ -77,18 +77,18 @@ class ApiQueryUserInfo extends ApiQueryBase {
 
 		if ( isset( $this->prop['groups'] ) ) {
 			$vals['groups'] = $user->getEffectiveGroups();
-			$result->setIndexedTagName( $vals['groups'], 'g' );	// even if empty
+			$result->setIndexedTagName( $vals['groups'], 'g' ); // even if empty
 		}
 
 		if ( isset( $this->prop['implicitgroups'] ) ) {
 			$vals['implicitgroups'] = $user->getAutomaticGroups();
-			$result->setIndexedTagName( $vals['implicitgroups'], 'g' );	// even if empty
+			$result->setIndexedTagName( $vals['implicitgroups'], 'g' ); // even if empty
 		}
 
 		if ( isset( $this->prop['rights'] ) ) {
 			// User::getRights() may return duplicate values, strip them
 			$vals['rights'] = array_values( array_unique( $user->getRights() ) );
-			$result->setIndexedTagName( $vals['rights'], 'r' );	// even if empty
+			$result->setIndexedTagName( $vals['rights'], 'r' ); // even if empty
 		}
 
 		if ( isset( $this->prop['changeablegroups'] ) ) {
@@ -104,12 +104,15 @@ class ApiQueryUserInfo extends ApiQueryBase {
 		}
 
 		if ( isset( $this->prop['preferencestoken'] ) &&
-			is_null( $this->getMain()->getRequest()->getVal( 'callback' ) )
+			is_null( $this->getMain()->getRequest()->getVal( 'callback' ) ) &&
+			$user->isAllowed( 'editmyoptions' )
 		) {
 			$vals['preferencestoken'] = $user->getEditToken( '', $this->getMain()->getRequest() );
 		}
 
 		if ( isset( $this->prop['editcount'] ) ) {
+			// use intval to prevent null if a non-logged-in user calls
+			// api.php?format=jsonfm&action=query&meta=userinfo&uiprop=editcount
 			$vals['editcount'] = intval( $user->getEditCount() );
 		}
 
@@ -121,11 +124,13 @@ class ApiQueryUserInfo extends ApiQueryBase {
 			$vals['realname'] = $user->getRealName();
 		}
 
-		if ( isset( $this->prop['email'] ) ) {
-			$vals['email'] = $user->getEmail();
-			$auth = $user->getEmailAuthenticationTimestamp();
-			if ( !is_null( $auth ) ) {
-				$vals['emailauthenticated'] = wfTimestamp( TS_ISO_8601, $auth );
+		if ( $user->isAllowed( 'viewmyprivateinfo' ) ) {
+			if ( isset( $this->prop['email'] ) ) {
+				$vals['email'] = $user->getEmail();
+				$auth = $user->getEmailAuthenticationTimestamp();
+				if ( !is_null( $auth ) ) {
+					$vals['emailauthenticated'] = wfTimestamp( TS_ISO_8601, $auth );
+				}
 			}
 		}
 
@@ -147,6 +152,7 @@ class ApiQueryUserInfo extends ApiQueryBase {
 			$result->setIndexedTagName( $acceptLang, 'lang' );
 			$vals['acceptlang'] = $acceptLang;
 		}
+
 		return $vals;
 	}
 
@@ -167,8 +173,9 @@ class ApiQueryUserInfo extends ApiQueryBase {
 		if ( $user->isNewbie() ) {
 			$categories[] = 'ip';
 			$categories[] = 'subnet';
-			if ( !$user->isAnon() )
+			if ( !$user->isAnon() ) {
 				$categories[] = 'newbie';
+			}
 		}
 		$categories = array_merge( $categories, $user->getGroups() );
 
@@ -182,6 +189,7 @@ class ApiQueryUserInfo extends ApiQueryBase {
 				}
 			}
 		}
+
 		return $retval;
 	}
 
@@ -226,7 +234,8 @@ class ApiQueryUserInfo extends ApiQueryBase {
 				'  ratelimits       - Lists all rate limits applying to the current user',
 				'  realname         - Adds the user\'s real name',
 				'  email            - Adds the user\'s email address and email authentication date',
-				'  acceptlang       - Echoes the Accept-Language header sent by the client in a structured format',
+				'  acceptlang       - Echoes the Accept-Language header sent by ' .
+					'the client in a structured format',
 				'  registrationdate - Adds the user\'s registration date',
 			)
 		);
@@ -290,7 +299,7 @@ class ApiQueryUserInfo extends ApiQueryBase {
 	}
 
 	public function getDescription() {
-		return 'Get information about the current user';
+		return 'Get information about the current user.';
 	}
 
 	public function getExamples() {
@@ -302,9 +311,5 @@ class ApiQueryUserInfo extends ApiQueryBase {
 
 	public function getHelpUrls() {
 		return 'https://www.mediawiki.org/wiki/API:Meta#userinfo_.2F_ui';
-	}
-
-	public function getVersion() {
-		return __CLASS__ . ': $Id$';
 	}
 }

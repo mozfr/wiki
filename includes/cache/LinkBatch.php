@@ -31,7 +31,7 @@ class LinkBatch {
 	/**
 	 * 2-d array, first index namespace, second index dbkey, value arbitrary
 	 */
-	var $data = array();
+	public $data = array();
 
 	/**
 	 * For debugging which method is using this class.
@@ -39,7 +39,7 @@ class LinkBatch {
 	protected $caller;
 
 	function __construct( $arr = array() ) {
-		foreach( $arr as $item ) {
+		foreach ( $arr as $item ) {
 			$this->addObj( $item );
 		}
 	}
@@ -98,7 +98,7 @@ class LinkBatch {
 	 * @return bool
 	 */
 	public function isEmpty() {
-		return ($this->getSize() == 0);
+		return $this->getSize() == 0;
 	}
 
 	/**
@@ -117,6 +117,7 @@ class LinkBatch {
 	 */
 	public function execute() {
 		$linkCache = LinkCache::singleton();
+
 		return $this->executeInto( $linkCache );
 	}
 
@@ -133,6 +134,7 @@ class LinkBatch {
 		$this->doGenderQuery();
 		$ids = $this->addResultToCache( $cache, $res );
 		wfProfileOut( __METHOD__ );
+
 		return $ids;
 	}
 
@@ -170,6 +172,7 @@ class LinkBatch {
 				$ids[$title->getPrefixedDBkey()] = 0;
 			}
 		}
+
 		return $ids;
 	}
 
@@ -197,6 +200,7 @@ class LinkBatch {
 		}
 		$res = $dbr->select( $table, $fields, $conds, $caller );
 		wfProfileOut( __METHOD__ );
+
 		return $res;
 	}
 
@@ -217,13 +221,14 @@ class LinkBatch {
 
 		$genderCache = GenderCache::singleton();
 		$genderCache->doLinkBatch( $this->data, $this->caller );
+
 		return true;
 	}
 
 	/**
 	 * Construct a WHERE clause which will match all the given titles.
 	 *
-	 * @param $prefix String: the appropriate table's field name prefix ('page', 'pl', etc)
+	 * @param string $prefix the appropriate table's field name prefix ('page', 'pl', etc)
 	 * @param $db DatabaseBase object to use
 	 * @return mixed string with SQL where clause fragment, or false if no items.
 	 */

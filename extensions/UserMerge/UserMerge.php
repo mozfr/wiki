@@ -28,8 +28,7 @@
 
 # Not a valid entry point, skip unless MEDIAWIKI is defined
 if ( !defined( 'MEDIAWIKI' ) ) {
-	echo "User Merge and Delete extension";
-	exit( 1 );
+	die( 'This file is a MediaWiki extension, it is not a valid entry point' );
 }
 
 $wgExtensionCredits['specialpage'][] = array(
@@ -38,7 +37,7 @@ $wgExtensionCredits['specialpage'][] = array(
 	'url'            => 'https://www.mediawiki.org/wiki/Extension:User_Merge_and_Delete',
 	'author'         => array( 'Tim Laqua', 'Thomas Gries', 'Matthew April' ),
 	'descriptionmsg' => 'usermerge-desc',
-	'version'        => '1.7'
+	'version'        => '1.9.0'
 );
 
 $wgAvailableRights[] = 'usermerge';
@@ -47,6 +46,7 @@ $wgAvailableRights[] = 'usermerge';
 $dir = __DIR__ . '/';
 $wgAutoloadClasses['UserMerge'] = $dir . 'UserMerge_body.php';
 
+$wgMessagesDirs['UserMerge'] = __DIR__ . '/i18n';
 $wgExtensionMessagesFiles['UserMerge'] = $dir . 'UserMerge.i18n.php';
 $wgExtensionMessagesFiles['UserMergeAlias'] = $dir . 'UserMerge.alias.php';
 $wgSpecialPages['UserMerge'] = 'UserMerge';

@@ -30,10 +30,6 @@
  */
 class ApiMove extends ApiBase {
 
-	public function __construct( $main, $action ) {
-		parent::__construct( $main, $action );
-	}
-
 	public function execute() {
 		$user = $this->getUser();
 		$params = $this->extractRequestParams();
@@ -42,7 +38,7 @@ class ApiMove extends ApiBase {
 
 		if ( isset( $params['from'] ) ) {
 			$fromTitle = Title::newFromText( $params['from'] );
-			if ( !$fromTitle ) {
+			if ( !$fromTitle || $fromTitle->isExternal() ) {
 				$this->dieUsageMsg( array( 'invalidtitle', $params['from'] ) );
 			}
 		} elseif ( isset( $params['fromid'] ) ) {
@@ -58,15 +54,15 @@ class ApiMove extends ApiBase {
 		$fromTalk = $fromTitle->getTalkPage();
 
 		$toTitle = Title::newFromText( $params['to'] );
-		if ( !$toTitle ) {
+		if ( !$toTitle || $toTitle->isExternal() ) {
 			$this->dieUsageMsg( array( 'invalidtitle', $params['to'] ) );
 		}
 		$toTalk = $toTitle->getTalkPage();
 
 		if ( $toTitle->getNamespace() == NS_FILE
 			&& !RepoGroup::singleton()->getLocalRepo()->findFile( $toTitle )
-			&& wfFindFile( $toTitle ) )
-		{
+			&& wfFindFile( $toTitle )
+		) {
 			if ( !$params['ignorewarnings'] && $user->isAllowed( 'reupload-shared' ) ) {
 				$this->dieUsageMsg( 'sharedfile-exists' );
 			} elseif ( !$user->isAllowed( 'reupload-shared' ) ) {
@@ -81,11 +77,22 @@ class ApiMove extends ApiBase {
 			$this->dieUsageMsg( reset( $retval ) );
 		}
 
-		$r = array( 'from' => $fromTitle->getPrefixedText(), 'to' => $toTitle->getPrefixedText(), 'reason' => $params['reason'] );
-		if ( !$params['noredirect'] || !$user->isAllowed( 'suppressredirect' ) ) {
+		$r = array(
+			'from' => $fromTitle->getPrefixedText(),
+			'to' => $toTitle->getPrefixedText(),
+			'reason' => $params['reason']
+		);
+
+		if ( $fromTitle->exists() ) {
+			//NOTE: we assume that if the old title exists, it's because it was re-created as
+			// a redirect to the new title. This is not safe, but what we did before was
+			// even worse: we just determined whether a redirect should have been created,
+			// and reported that it was created if it should have, without any checks.
+			// Also note that isRedirect() is unreliable because of bug 37209.
 			$r['redirectcreated'] = '';
 		}
-		if( $toTitleExists ) {
+
+		if ( $toTitleExists ) {
 			$r['moveoverredirect'] = '';
 		}
 
@@ -96,7 +103,7 @@ class ApiMove extends ApiBase {
 			if ( $retval === true ) {
 				$r['talkfrom'] = $fromTalk->getPrefixedText();
 				$r['talkto'] = $toTalk->getPrefixedText();
-				if( $toTalkExists ) {
+				if ( $toTalkExists ) {
 					$r['talkmoveoverredirect'] = '';
 				}
 			} else {
@@ -112,7 +119,7 @@ class ApiMove extends ApiBase {
 		// Move subpages
 		if ( $params['movesubpages'] ) {
 			$r['subpages'] = $this->moveSubpages( $fromTitle, $toTitle,
-					$params['reason'], $params['noredirect'] );
+				$params['reason'], $params['noredirect'] );
 			$result->setIndexedTagName( $r['subpages'], 'subpage' );
 
 			if ( $params['movetalk'] ) {
@@ -122,7 +129,7 @@ class ApiMove extends ApiBase {
 			}
 		}
 
-		$watch = "preferences";
+		$watch = 'preferences';
 		if ( isset( $params['watchlist'] ) ) {
 			$watch = $params['watchlist'];
 		} elseif ( $params['watch'] ) {
@@ -141,8 +148,8 @@ class ApiMove extends ApiBase {
 	/**
 	 * @param Title $fromTitle
 	 * @param Title $toTitle
-	 * @param  $reason
-	 * @param  $noredirect
+	 * @param $reason
+	 * @param $noredirect
 	 * @return array
 	 */
 	public function moveSubpages( $fromTitle, $toTitle, $reason, $noredirect ) {
@@ -150,20 +157,21 @@ class ApiMove extends ApiBase {
 		$success = $fromTitle->moveSubpages( $toTitle, true, $reason, !$noredirect );
 		if ( isset( $success[0] ) ) {
 			return array( 'error' => $this->parseMsg( $success ) );
-		} else {
-			// At least some pages could be moved
-			// Report each of them separately
-			foreach ( $success as $oldTitle => $newTitle ) {
-				$r = array( 'from' => $oldTitle );
-				if ( is_array( $newTitle ) ) {
-					$r['error'] = $this->parseMsg( reset( $newTitle ) );
-				} else {
-					// Success
-					$r['to'] = $newTitle;
-				}
-				$retval[] = $r;
-			}
 		}
+
+		// At least some pages could be moved
+		// Report each of them separately
+		foreach ( $success as $oldTitle => $newTitle ) {
+			$r = array( 'from' => $oldTitle );
+			if ( is_array( $newTitle ) ) {
+				$r['error'] = $this->parseMsg( reset( $newTitle ) );
+			} else {
+				// Success
+				$r['to'] = $newTitle;
+			}
+			$retval[] = $r;
+		}
+
 		return $retval;
 	}
 
@@ -216,6 +224,7 @@ class ApiMove extends ApiBase {
 
 	public function getParamDescription() {
 		$p = $this->getModulePrefix();
+
 		return array(
 			'from' => "Title of the page you want to move. Cannot be used together with {$p}fromid",
 			'fromid' => "Page ID of the page you want to move. Cannot be used together with {$p}from",
@@ -227,7 +236,8 @@ class ApiMove extends ApiBase {
 			'noredirect' => 'Don\'t create a redirect',
 			'watch' => 'Add the page and the redirect to your watchlist',
 			'unwatch' => 'Remove the page and the redirect from your watchlist',
-			'watchlist' => 'Unconditionally add or remove the page from your watchlist, use preferences or do not change watch',
+			'watchlist' => 'Unconditionally add or remove the page from your ' .
+				'watchlist, use preferences or do not change watch',
 			'ignorewarnings' => 'Ignore any warnings'
 		);
 	}
@@ -262,7 +272,7 @@ class ApiMove extends ApiBase {
 	}
 
 	public function getDescription() {
-		return 'Move a page';
+		return 'Move a page.';
 	}
 
 	public function getPossibleErrors() {
@@ -288,15 +298,12 @@ class ApiMove extends ApiBase {
 
 	public function getExamples() {
 		return array(
-			'api.php?action=move&from=Exampel&to=Example&token=123ABC&reason=Misspelled%20title&movetalk=&noredirect='
+			'api.php?action=move&from=Badtitle&to=Goodtitle&token=123ABC&' .
+				'reason=Misspelled%20title&movetalk=&noredirect='
 		);
 	}
 
 	public function getHelpUrls() {
 		return 'https://www.mediawiki.org/wiki/API:Move';
-	}
-
-	public function getVersion() {
-		return __CLASS__ . ': $Id$';
 	}
 }

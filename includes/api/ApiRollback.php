@@ -29,10 +29,6 @@
  */
 class ApiRollback extends ApiBase {
 
-	public function __construct( $main, $action ) {
-		parent::__construct( $main, $action );
-	}
-
 	/**
 	 * @var Title
 	 */
@@ -51,7 +47,14 @@ class ApiRollback extends ApiBase {
 		$pageObj = WikiPage::factory( $titleObj );
 		$summary = $params['summary'];
 		$details = array();
-		$retval = $pageObj->doRollback( $this->getRbUser(), $summary, $params['token'], $params['markbot'], $details, $this->getUser() );
+		$retval = $pageObj->doRollback(
+			$this->getRbUser(),
+			$summary,
+			$params['token'],
+			$params['markbot'],
+			$details,
+			$this->getUser()
+		);
 
 		if ( $retval ) {
 			// We don't care about multiple errors, just report one of them
@@ -111,11 +114,14 @@ class ApiRollback extends ApiBase {
 	public function getParamDescription() {
 		return array(
 			'title' => 'Title of the page you want to rollback.',
-			'user' => 'Name of the user whose edits are to be rolled back. If set incorrectly, you\'ll get a badtoken error.',
-			'token' => "A rollback token previously retrieved through {$this->getModulePrefix()}prop=revisions",
+			'user' => 'Name of the user whose edits are to be rolled back. If ' .
+				'set incorrectly, you\'ll get a badtoken error.',
+			'token' => 'A rollback token previously retrieved through ' .
+				"{$this->getModulePrefix()}prop=revisions",
 			'summary' => 'Custom edit summary. If empty, default summary will be used',
 			'markbot' => 'Mark the reverted edits and the revert as bot edits',
-			'watchlist' => 'Unconditionally add or remove the page from your watchlist, use preferences or do not change watch',
+			'watchlist' => 'Unconditionally add or remove the page from your watchlist, ' .
+				'use preferences or do not change watch',
 		);
 	}
 
@@ -134,8 +140,8 @@ class ApiRollback extends ApiBase {
 
 	public function getDescription() {
 		return array(
-			'Undo the last edit to the page. If the last user who edited the page made multiple edits in a row,',
-			'they will all be rolled back'
+			'Undo the last edit to the page. If the last user who edited the page made',
+			'multiple edits in a row, they will all be rolled back.'
 		);
 	}
 
@@ -185,7 +191,7 @@ class ApiRollback extends ApiBase {
 
 		$this->mTitleObj = Title::newFromText( $params['title'] );
 
-		if ( !$this->mTitleObj ) {
+		if ( !$this->mTitleObj || $this->mTitleObj->isExternal() ) {
 			$this->dieUsageMsg( array( 'invalidtitle', $params['title'] ) );
 		}
 		if ( !$this->mTitleObj->exists() ) {
@@ -198,15 +204,12 @@ class ApiRollback extends ApiBase {
 	public function getExamples() {
 		return array(
 			'api.php?action=rollback&title=Main%20Page&user=Catrope&token=123ABC',
-			'api.php?action=rollback&title=Main%20Page&user=217.121.114.116&token=123ABC&summary=Reverting%20vandalism&markbot=1'
+			'api.php?action=rollback&title=Main%20Page&user=217.121.114.116&' .
+				'token=123ABC&summary=Reverting%20vandalism&markbot=1'
 		);
 	}
 
 	public function getHelpUrls() {
 		return 'https://www.mediawiki.org/wiki/API:Rollback';
-	}
-
-	public function getVersion() {
-		return __CLASS__ . ': $Id$';
 	}
 }

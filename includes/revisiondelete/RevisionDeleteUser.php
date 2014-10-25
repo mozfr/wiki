@@ -33,10 +33,10 @@ class RevisionDeleteUser {
 
 	/**
 	 * Update *_deleted bitfields in various tables to hide or unhide usernames
-	 * @param  $name String username
-	 * @param  $userId Int user id
-	 * @param  $op String operator '|' or '&'
-	 * @param  $dbw null|DatabaseBase, if you happen to have one lying around
+	 * @param $name String username
+	 * @param $userId Int user id
+	 * @param $op String operator '|' or '&'
+	 * @param $dbw null|DatabaseBase, if you happen to have one lying around
 	 * @return bool
 	 */
 	private static function setUsernameBitfields( $name, $userId, $op, $dbw ) {
@@ -54,7 +54,7 @@ class RevisionDeleteUser {
 		# The same goes for the sysop-restricted *_deleted bit.
 		$delUser = Revision::DELETED_USER | Revision::DELETED_RESTRICTED;
 		$delAction = LogPage::DELETED_ACTION | Revision::DELETED_RESTRICTED;
-		if( $op == '&' ) {
+		if ( $op == '&' ) {
 			$delUser = "~{$delUser}";
 			$delAction = "~{$delAction}";
 		}

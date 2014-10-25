@@ -1,7 +1,7 @@
 <?php
 /**
- * Version of opensearch_desc.php to used in web server requiring .php5 extension
- * to execute scripts with PHP5 egine.
+ * Version of opensearch_desc.php to be used in web servers that require the .php5
+ * extension to execute scripts with the PHP5 engine.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,4 +21,4 @@
  * @file
  */
 
-require './opensearch_desc.php'; 
+require './opensearch_desc.php';

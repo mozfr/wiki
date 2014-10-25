@@ -39,4 +39,7 @@ class ProfilerStub extends Profiler {
 	public function close() {}
 	public function logData() {}
 	public function getCurrentSection() { return ''; }
+	public function transactionWritingIn( $server, $db ) {}
+	public function transactionWritingOut( $server, $db ) {}
+	public function getRawData() { return array(); }
 }

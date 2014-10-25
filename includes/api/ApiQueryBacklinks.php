@@ -149,7 +149,8 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 		if ( $this->params['filterredir'] == 'redirects' ) {
 			$this->addWhereFld( 'page_is_redirect', 1 );
 		} elseif ( $this->params['filterredir'] == 'nonredirects' && !$this->redirect ) {
-			// bug 22245 - Check for !redirect, as filtering nonredirects, when getting what links to them is contradictory
+			// bug 22245 - Check for !redirect, as filtering nonredirects, when
+			// getting what links to them is contradictory
 			$this->addWhereFld( 'page_is_redirect', 0 );
 		}
 
@@ -188,11 +189,12 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 		$titleWhere = array();
 		$allRedirNs = array();
 		$allRedirDBkey = array();
+		/** @var $t Title */
 		foreach ( $this->redirTitles as $t ) {
 			$redirNs = $t->getNamespace();
 			$redirDBkey = $t->getDBkey();
 			$titleWhere[] = "{$this->bl_title} = " . $db->addQuotes( $redirDBkey ) .
-					( $this->hasNS ? " AND {$this->bl_ns} = {$redirNs}" : '' );
+				( $this->hasNS ? " AND {$this->bl_ns} = {$redirNs}" : '' );
 			$allRedirNs[] = $redirNs;
 			$allRedirDBkey[] = $redirDBkey;
 		}
@@ -201,20 +203,21 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 
 		if ( !is_null( $this->redirID ) ) {
 			$op = $this->params['dir'] == 'descending' ? '<' : '>';
+			/** @var $first Title */
 			$first = $this->redirTitles[0];
 			$title = $db->addQuotes( $first->getDBkey() );
 			$ns = $first->getNamespace();
 			$from = $this->redirID;
 			if ( $this->hasNS ) {
 				$this->addWhere( "{$this->bl_ns} $op $ns OR " .
-						"({$this->bl_ns} = $ns AND " .
-						"({$this->bl_title} $op $title OR " .
-						"({$this->bl_title} = $title AND " .
-						"{$this->bl_from} $op= $from)))" );
+					"({$this->bl_ns} = $ns AND " .
+					"({$this->bl_title} $op $title OR " .
+					"({$this->bl_title} = $title AND " .
+					"{$this->bl_from} $op= $from)))" );
 			} else {
 				$this->addWhere( "{$this->bl_title} $op $title OR " .
-						"({$this->bl_title} = $title AND " .
-						"{$this->bl_from} $op= $from)" );
+					"({$this->bl_title} = $title AND " .
+					"{$this->bl_from} $op= $from)" );
 			}
 		}
 		if ( $this->params['filterredir'] == 'redirects' ) {
@@ -227,10 +230,10 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 		$orderBy = array();
 		$sort = ( $this->params['dir'] == 'descending' ? ' DESC' : '' );
 		// Don't order by namespace/title if it's constant in the WHERE clause
-		if( $this->hasNS && count( array_unique( $allRedirNs ) ) != 1 ) {
+		if ( $this->hasNS && count( array_unique( $allRedirNs ) ) != 1 ) {
 			$orderBy[] = $this->bl_ns . $sort;
 		}
-		if( count( array_unique( $allRedirDBkey ) ) != 1 ) {
+		if ( count( array_unique( $allRedirDBkey ) ) != 1 ) {
 			$orderBy[] = $this->bl_title . $sort;
 		}
 		$orderBy[] = $this->bl_from . $sort;
@@ -246,13 +249,16 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 		$this->params = $this->extractRequestParams( false );
 		$this->redirect = isset( $this->params['redirect'] ) && $this->params['redirect'];
 		$userMax = ( $this->redirect ? ApiBase::LIMIT_BIG1 / 2 : ApiBase::LIMIT_BIG1 );
-		$botMax  = ( $this->redirect ? ApiBase::LIMIT_BIG2 / 2 : ApiBase::LIMIT_BIG2 );
+		$botMax = ( $this->redirect ? ApiBase::LIMIT_BIG2 / 2 : ApiBase::LIMIT_BIG2 );
 
 		$result = $this->getResult();
 
 		if ( $this->params['limit'] == 'max' ) {
 			$this->params['limit'] = $this->getMain()->canApiHighLimits() ? $botMax : $userMax;
 			$result->setParsedLimit( $this->getModuleName(), $this->params['limit'] );
+		} else {
+			$this->params['limit'] = intval( $this->params['limit'] );
+			$this->validateLimit( 'limit', $this->params['limit'], 1, $userMax, $botMax );
 		}
 
 		$this->processContinue();
@@ -263,8 +269,9 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 		$count = 0;
 
 		foreach ( $res as $row ) {
-			if ( ++ $count > $this->params['limit'] ) {
-				// We've reached the one extra which shows that there are additional pages to be had. Stop here...
+			if ( ++$count > $this->params['limit'] ) {
+				// We've reached the one extra which shows that there are
+				// additional pages to be had. Stop here...
 				// Continue string preserved in case the redirect query doesn't pass the limit
 				$this->continueStr = $this->getContinueStr( $row->page_id );
 				break;
@@ -289,12 +296,13 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 			$count = 0;
 			foreach ( $res as $row ) {
 				if ( ++$count > $this->params['limit'] ) {
-					// We've reached the one extra which shows that there are additional pages to be had. Stop here...
+					// We've reached the one extra which shows that there are
+					// additional pages to be had. Stop here...
 					// We need to keep the parent page of this redir in
 					if ( $this->hasNS ) {
-						$parentID = $this->pageMap[$row-> { $this->bl_ns } ][$row-> { $this->bl_title } ];
+						$parentID = $this->pageMap[$row->{$this->bl_ns}][$row->{$this->bl_title}];
 					} else {
-						$parentID = $this->pageMap[NS_FILE][$row-> { $this->bl_title } ];
+						$parentID = $this->pageMap[NS_FILE][$row->{$this->bl_title}];
 					}
 					$this->continueStr = $this->getContinueRedirStr( $parentID, $row->page_id );
 					break;
@@ -375,11 +383,14 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 		if ( $row->page_is_redirect ) {
 			$a['redirect'] = '';
 		}
-		$ns = $this->hasNS ? $row-> { $this->bl_ns } : NS_FILE;
-		$parentID = $this->pageMap[$ns][$row-> { $this->bl_title } ];
+		$ns = $this->hasNS ? $row->{$this->bl_ns} : NS_FILE;
+		$parentID = $this->pageMap[$ns][$row->{$this->bl_title}];
 		// Put all the results in an array first
 		$this->resultArr[$parentID]['redirlinks'][] = $a;
-		$this->getResult()->setIndexedTagName( $this->resultArr[$parentID]['redirlinks'], $this->bl_code );
+		$this->getResult()->setIndexedTagName(
+			$this->resultArr[$parentID]['redirlinks'],
+			$this->bl_code
+		);
 	}
 
 	protected function processContinue() {
@@ -391,7 +402,10 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 
 		// only image titles are allowed for the root in imageinfo mode
 		if ( !$this->hasNS && $this->rootTitle->getNamespace() !== NS_FILE ) {
-			$this->dieUsage( "The title for {$this->getModuleName()} query must be an image", 'bad_image_title' );
+			$this->dieUsage(
+				"The title for {$this->getModuleName()} query must be an image",
+				'bad_image_title'
+			);
 		}
 	}
 
@@ -406,20 +420,14 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 		// null stuff out now so we know what's set and what isn't
 		$this->rootTitle = $this->contID = $this->redirID = null;
 		$rootNs = intval( $continueList[0] );
-		if ( $rootNs === 0 && $continueList[0] !== '0' ) {
-			// Illegal continue parameter
-			$this->dieUsage( 'Invalid continue param. You should pass the original value returned by the previous query', '_badcontinue' );
-		}
+		$this->dieContinueUsageIf( $rootNs === 0 && $continueList[0] !== '0' );
+
 		$this->rootTitle = Title::makeTitleSafe( $rootNs, $continueList[1] );
+		$this->dieContinueUsageIf( !$this->rootTitle );
 
-		if ( !$this->rootTitle ) {
-			$this->dieUsage( 'Invalid continue param. You should pass the original value returned by the previous query', '_badcontinue' );
-		}
 		$contID = intval( $continueList[2] );
+		$this->dieContinueUsageIf( $contID === 0 && $continueList[2] !== '0' );
 
-		if ( $contID === 0 && $continueList[2] !== '0' ) {
-			$this->dieUsage( 'Invalid continue param. You should pass the original value returned by the previous query', '_badcontinue' );
-		}
 		$this->contID = $contID;
 		$id2 = isset( $continueList[3] ) ? $continueList[3] : null;
 		$redirID = intval( $id2 );
@@ -429,7 +437,6 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 			return;
 		}
 		$this->redirID = $redirID;
-
 	}
 
 	protected function getContinueStr( $lastPageID ) {
@@ -482,6 +489,7 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 			return $retval;
 		}
 		$retval['redirect'] = false;
+
 		return $retval;
 	}
 
@@ -495,11 +503,17 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 		);
 		if ( $this->getModuleName() != 'embeddedin' ) {
 			return array_merge( $retval, array(
-				'redirect' => 'If linking page is a redirect, find all pages that link to that redirect as well. Maximum limit is halved.',
-				'filterredir' => "How to filter for redirects. If set to nonredirects when {$this->bl_code}redirect is enabled, this is only applied to the second level",
-				'limit' => "How many total pages to return. If {$this->bl_code}redirect is enabled, limit applies to each level separately (which means you may get up to 2 * limit results)."
+				'redirect' => 'If linking page is a redirect, find all pages ' .
+					'that link to that redirect as well. Maximum limit is halved.',
+				'filterredir' => 'How to filter for redirects. If set to ' .
+					"nonredirects when {$this->bl_code}redirect is enabled, " .
+					'this is only applied to the second level',
+				'limit' => 'How many total pages to return. If ' .
+					"{$this->bl_code}redirect is enabled, limit applies to each " .
+					'level separately (which means you may get up to 2 * limit results).'
 			) );
 		}
+
 		return array_merge( $retval, array(
 			'filterredir' => 'How to filter for redirects',
 			'limit' => 'How many total pages to return'
@@ -520,13 +534,13 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 	public function getDescription() {
 		switch ( $this->getModuleName() ) {
 			case 'backlinks':
-				return 'Find all pages that link to the given page';
+				return 'Find all pages that link to the given page.';
 			case 'embeddedin':
-				return 'Find all pages that embed (transclude) the given title';
+				return 'Find all pages that embed (transclude) the given title.';
 			case 'imageusage':
 				return 'Find all pages that use the given image title.';
 			default:
-				ApiBase::dieDebug( __METHOD__, 'Unknown module name' );
+				ApiBase::dieDebug( __METHOD__, 'Unknown module name.' );
 		}
 	}
 
@@ -534,8 +548,10 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 		return array_merge( parent::getPossibleErrors(),
 			$this->getTitleOrPageIdErrorMessage(),
 			array(
-				array( 'code' => 'bad_image_title', 'info' => "The title for {$this->getModuleName()} query must be an image" ),
-				array( 'code' => '_badcontinue', 'info' => 'Invalid continue param. You should pass the original value returned by the previous query' ),
+				array(
+					'code' => 'bad_image_title',
+					'info' => "The title for {$this->getModuleName()} query must be an image"
+				),
 			)
 		);
 	}
@@ -561,9 +577,5 @@ class ApiQueryBacklinks extends ApiQueryGeneratorBase {
 
 	public function getHelpUrls() {
 		return $this->helpUrl;
-	}
-
-	public function getVersion() {
-		return __CLASS__ . ': $Id$';
 	}
 }

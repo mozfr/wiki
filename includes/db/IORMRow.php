@@ -27,28 +27,16 @@
  * @file
  * @ingroup ORM
  *
- * @licence GNU GPL v2 or later
+ * @license GNU GPL v2 or later
  * @author Jeroen De Dauw < jeroendedauw@gmail.com >
  */
 
 interface IORMRow {
-
-
-	/**
-	 * Constructor.
-	 *
-	 * @since 1.20
-	 *
-	 * @param IORMTable $table
-	 * @param array|null $fields
-	 * @param boolean $loadDefaults
-	 */
-	public function __construct( IORMTable $table, $fields = null, $loadDefaults = false );
-
 	/**
 	 * Load the specified fields from the database.
 	 *
 	 * @since 1.20
+	 * @deprecated since 1.22
 	 *
 	 * @param array|null $fields
 	 * @param boolean $override
@@ -75,8 +63,9 @@ interface IORMRow {
 	 * Gets the value of a field but first loads it if not done so already.
 	 *
 	 * @since 1.20
+	 * @deprecated since 1.22
 	 *
-	 * @param string$name
+	 * @param string $name
 	 *
 	 * @return mixed
 	 */
@@ -156,6 +145,7 @@ interface IORMRow {
 	 * Load the default values, via getDefaults.
 	 *
 	 * @since 1.20
+	 * @deprecated since 1.22
 	 *
 	 * @param boolean $override
 	 */
@@ -168,6 +158,7 @@ interface IORMRow {
 	 * @since 1.20
 	 *
 	 * @param string|null $functionName
+	 * @deprecated since 1.22
 	 *
 	 * @return boolean Success indicator
 	 */
@@ -177,6 +168,7 @@ interface IORMRow {
 	 * Removes the object from the database.
 	 *
 	 * @since 1.20
+	 * @deprecated since 1.22
 	 *
 	 * @return boolean Success indicator
 	 */
@@ -216,9 +208,9 @@ interface IORMRow {
 
 	/**
 	 * Add an amount (can be negative) to the specified field (needs to be numeric).
-	 * TODO: most off this stuff makes more sense in the table class
 	 *
 	 * @since 1.20
+	 * @deprecated since 1.22
 	 *
 	 * @param string $field
 	 * @param integer $amount
@@ -240,6 +232,7 @@ interface IORMRow {
 	 * Computes and updates the values of the summary fields.
 	 *
 	 * @since 1.20
+	 * @deprecated since 1.22
 	 *
 	 * @param array|string|null $summaryFields
 	 */
@@ -249,6 +242,7 @@ interface IORMRow {
 	 * Sets the value for the @see $updateSummaries field.
 	 *
 	 * @since 1.20
+	 * @deprecated since 1.22
 	 *
 	 * @param boolean $update
 	 */
@@ -258,6 +252,7 @@ interface IORMRow {
 	 * Sets the value for the @see $inSummaryMode field.
 	 *
 	 * @since 1.20
+	 * @deprecated since 1.22
 	 *
 	 * @param boolean $summaryMode
 	 */
@@ -267,9 +262,9 @@ interface IORMRow {
 	 * Returns the table this IORMRow is a row in.
 	 *
 	 * @since 1.20
+	 * @deprecated since 1.22
 	 *
 	 * @return IORMTable
 	 */
 	public function getTable();
-
 }

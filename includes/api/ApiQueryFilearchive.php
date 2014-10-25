@@ -41,7 +41,10 @@ class ApiQueryFilearchive extends ApiQueryBase {
 		$user = $this->getUser();
 		// Before doing anything at all, let's check permissions
 		if ( !$user->isAllowed( 'deletedhistory' ) ) {
-			$this->dieUsage( 'You don\'t have permission to view deleted file information', 'permissiondenied' );
+			$this->dieUsage(
+				'You don\'t have permission to view deleted file information',
+				'permissiondenied'
+			);
 		}
 
 		$db = $this->getDB();
@@ -63,8 +66,9 @@ class ApiQueryFilearchive extends ApiQueryBase {
 
 		$this->addTables( 'filearchive' );
 
+		$this->addFields( ArchivedFile::selectFields() );
 		$this->addFields( array( 'fa_name', 'fa_deleted' ) );
-		$this->addFieldsIf( 'fa_storage_key', $fld_sha1 );
+		$this->addFieldsIf( 'fa_sha1', $fld_sha1 );
 		$this->addFieldsIf( 'fa_timestamp', $fld_timestamp );
 		$this->addFieldsIf( array( 'fa_user', 'fa_user_text' ), $fld_user );
 		$this->addFieldsIf( array( 'fa_height', 'fa_width', 'fa_size' ), $fld_dimensions || $fld_size );
@@ -77,10 +81,7 @@ class ApiQueryFilearchive extends ApiQueryBase {
 
 		if ( !is_null( $params['continue'] ) ) {
 			$cont = explode( '|', $params['continue'] );
-			if ( count( $cont ) != 1 ) {
-				$this->dieUsage( "Invalid continue param. You should pass the " .
-					"original value returned by the previous query", "_badcontinue" );
-			}
+			$this->dieContinueUsageIf( count( $cont ) != 1 );
 			$op = $params['dir'] == 'descending' ? '<' : '>';
 			$cont_from = $db->addQuotes( $cont[0] );
 			$this->addWhere( "fa_name $op= $cont_from" );
@@ -88,49 +89,49 @@ class ApiQueryFilearchive extends ApiQueryBase {
 
 		// Image filters
 		$dir = ( $params['dir'] == 'descending' ? 'older' : 'newer' );
-		$from = ( is_null( $params['from'] ) ? null : $this->titlePartToKey( $params['from'] ) );
+		$from = ( $params['from'] === null ? null : $this->titlePartToKey( $params['from'], NS_FILE ) );
 		if ( !is_null( $params['continue'] ) ) {
 			$from = $params['continue'];
 		}
-		$to = ( is_null( $params['to'] ) ? null : $this->titlePartToKey( $params['to'] ) );
+		$to = ( $params['to'] === null ? null : $this->titlePartToKey( $params['to'], NS_FILE ) );
 		$this->addWhereRange( 'fa_name', $dir, $from, $to );
 		if ( isset( $params['prefix'] ) ) {
-			$this->addWhere( 'fa_name' . $db->buildLike( $this->titlePartToKey( $params['prefix'] ), $db->anyString() ) );
+			$this->addWhere( 'fa_name' . $db->buildLike(
+				$this->titlePartToKey( $params['prefix'], NS_FILE ),
+				$db->anyString() ) );
 		}
 
 		$sha1Set = isset( $params['sha1'] );
 		$sha1base36Set = isset( $params['sha1base36'] );
 		if ( $sha1Set || $sha1base36Set ) {
-			global $wgMiserMode;
-			if ( $wgMiserMode  ) {
-				$this->dieUsage( 'Search by hash disabled in Miser Mode', 'hashsearchdisabled' );
-			}
-
 			$sha1 = false;
 			if ( $sha1Set ) {
-				if ( !$this->validateSha1Hash( $params['sha1'] ) ) {
+				$sha1 = strtolower( $params['sha1'] );
+				if ( !$this->validateSha1Hash( $sha1 ) ) {
 					$this->dieUsage( 'The SHA1 hash provided is not valid', 'invalidsha1hash' );
 				}
-				$sha1 = wfBaseConvert( $params['sha1'], 16, 36, 31 );
+				$sha1 = wfBaseConvert( $sha1, 16, 36, 31 );
 			} elseif ( $sha1base36Set ) {
-				if ( !$this->validateSha1Base36Hash( $params['sha1base36'] ) ) {
+				$sha1 = strtolower( $params['sha1base36'] );
+				if ( !$this->validateSha1Base36Hash( $sha1 ) ) {
 					$this->dieUsage( 'The SHA1Base36 hash provided is not valid', 'invalidsha1base36hash' );
 				}
-				$sha1 = $params['sha1base36'];
 			}
 			if ( $sha1 ) {
-				$this->addWhere( 'fa_storage_key ' . $db->buildLike( "{$sha1}.", $db->anyString() ) );
+				$this->addWhereFld( 'fa_sha1', $sha1 );
 			}
 		}
 
-		if ( !$user->isAllowed( 'suppressrevision' ) ) {
-			// Filter out revisions that the user is not allowed to see. There
-			// is no way to indicate that we have skipped stuff because the
-			// continuation parameter is fa_name
-
-			// Note that this field is unindexed. This should however not be
-			// a big problem as files with fa_deleted are rare
-			$this->addWhereFld( 'fa_deleted', 0 );
+		// Exclude files this user can't view.
+		if ( !$user->isAllowed( 'deletedtext' ) ) {
+			$bitmask = File::DELETED_FILE;
+		} elseif ( !$user->isAllowed( 'suppressrevision' ) ) {
+			$bitmask = File::DELETED_FILE | File::DELETED_RESTRICTED;
+		} else {
+			$bitmask = 0;
+		}
+		if ( $bitmask ) {
+			$this->addWhere( $this->getDB()->bitAnd( 'fa_deleted', $bitmask ) . " != $bitmask" );
 		}
 
 		$limit = $params['limit'];
@@ -144,7 +145,8 @@ class ApiQueryFilearchive extends ApiQueryBase {
 		$result = $this->getResult();
 		foreach ( $res as $row ) {
 			if ( ++$count > $limit ) {
-				// We've reached the one extra which shows that there are additional pages to be had. Stop here...
+				// We've reached the one extra which shows that there are
+				// additional pages to be had. Stop here...
 				$this->setContinueEnumParameter( 'continue', $row->fa_name );
 				break;
 			}
@@ -154,15 +156,26 @@ class ApiQueryFilearchive extends ApiQueryBase {
 			$title = Title::makeTitle( NS_FILE, $row->fa_name );
 			self::addTitleInfo( $file, $title );
 
+			if ( $fld_description &&
+				Revision::userCanBitfield( $row->fa_deleted, File::DELETED_COMMENT, $user )
+			) {
+				$file['description'] = $row->fa_description;
+				if ( isset( $prop['parseddescription'] ) ) {
+					$file['parseddescription'] = Linker::formatComment(
+						$row->fa_description, $title );
+				}
+			}
+			if ( $fld_user &&
+				Revision::userCanBitfield( $row->fa_deleted, File::DELETED_USER, $user )
+			) {
+				$file['userid'] = $row->fa_user;
+				$file['user'] = $row->fa_user_text;
+			}
 			if ( $fld_sha1 ) {
-				$file['sha1'] = wfBaseConvert( LocalRepo::getHashFromKey( $row->fa_storage_key ), 36, 16, 40 );
+				$file['sha1'] = wfBaseConvert( $row->fa_sha1, 36, 16, 40 );
 			}
 			if ( $fld_timestamp ) {
 				$file['timestamp'] = wfTimestamp( TS_ISO_8601, $row->fa_timestamp );
-			}
-			if ( $fld_user ) {
-				$file['userid'] = $row->fa_user;
-				$file['user'] = $row->fa_user_text;
 			}
 			if ( $fld_size || $fld_dimensions ) {
 				$file['size'] = $row->fa_size;
@@ -175,20 +188,13 @@ class ApiQueryFilearchive extends ApiQueryBase {
 				$file['height'] = $row->fa_height;
 				$file['width'] = $row->fa_width;
 			}
-			if ( $fld_description ) {
-				$file['description'] = $row->fa_description;
-				if ( isset( $prop['parseddescription'] ) ) {
-					$file['parseddescription'] = Linker::formatComment(
-						$row->fa_description, $title );
-				}
-			}
 			if ( $fld_mediatype ) {
 				$file['mediatype'] = $row->fa_media_type;
 			}
 			if ( $fld_metadata ) {
 				$file['metadata'] = $row->fa_metadata
-						? ApiQueryImageInfo::processMetaData( unserialize( $row->fa_metadata ), $result )
-						: null;
+					? ApiQueryImageInfo::processMetaData( unserialize( $row->fa_metadata ), $result )
+					: null;
 			}
 			if ( $fld_bitdepth ) {
 				$file['bitdepth'] = $row->fa_bits;
@@ -214,7 +220,6 @@ class ApiQueryFilearchive extends ApiQueryBase {
 				$file['suppressed'] = '';
 			}
 
-
 			$fit = $result->addValue( array( 'query', $this->getModuleName() ), null, $file );
 			if ( !$fit ) {
 				$this->setContinueEnumParameter( 'continue', $row->fa_name );
@@ -226,7 +231,7 @@ class ApiQueryFilearchive extends ApiQueryBase {
 	}
 
 	public function getAllowedParams() {
-		return array (
+		return array(
 			'from' => null,
 			'continue' => null,
 			'to' => null,
@@ -276,20 +281,21 @@ class ApiQueryFilearchive extends ApiQueryBase {
 			'prefix' => 'Search for all image titles that begin with this value',
 			'dir' => 'The direction in which to list',
 			'limit' => 'How many images to return in total',
-			'sha1' => "SHA1 hash of image. Overrides {$this->getModulePrefix()}sha1base36. Disabled in Miser Mode",
-			'sha1base36' => 'SHA1 hash of image in base 36 (used in MediaWiki). Disabled in Miser Mode',
+			'sha1' => "SHA1 hash of image. Overrides {$this->getModulePrefix()}sha1base36",
+			'sha1base36' => 'SHA1 hash of image in base 36 (used in MediaWiki)',
 			'prop' => array(
 				'What image information to get:',
 				' sha1              - Adds SHA-1 hash for the image',
 				' timestamp         - Adds timestamp for the uploaded version',
 				' user              - Adds user who uploaded the image version',
-				' size              - Adds the size of the image in bytes and the height, width and page count (if applicable)',
+				' size              - Adds the size of the image in bytes and the height, ' .
+					'width and page count (if applicable)',
 				' dimensions        - Alias for size',
 				' description       - Adds description the image version',
 				' parseddescription - Parse the description on the version',
 				' mime              - Adds MIME of the image',
 				' mediatype         - Adds the media type of the image',
-				' metadata          - Lists EXIF metadata for the version of the image',
+				' metadata          - Lists Exif metadata for the version of the image',
 				' bitdepth          - Adds the bit depth of the version',
 				' archivename       - Adds the file name of the archive version for non-latest versions'
 			),
@@ -361,16 +367,21 @@ class ApiQueryFilearchive extends ApiQueryBase {
 	}
 
 	public function getDescription() {
-		return 'Enumerate all deleted files sequentially';
+		return 'Enumerate all deleted files sequentially.';
 	}
 
 	public function getPossibleErrors() {
 		return array_merge( parent::getPossibleErrors(), array(
-			array( 'code' => 'permissiondenied', 'info' => 'You don\'t have permission to view deleted file information' ),
+			array(
+				'code' => 'permissiondenied',
+				'info' => 'You don\'t have permission to view deleted file information'
+			),
 			array( 'code' => 'hashsearchdisabled', 'info' => 'Search by hash disabled in Miser Mode' ),
-			array( 'code' => 'invalidsha1hash', 'info' => 'The SHA1 hash provided is not valid' ),
-			array( 'code' => 'invalidsha1base36hash', 'info' => 'The SHA1Base36 hash provided is not valid' ),
-			array( 'code' => '_badcontinue', 'info' => 'Invalid continue param. You should pass the original value returned by the previous query' ),
+			array( 'code' => 'invalidsha1hash', 'info' => 'The SHA-1 hash provided is not valid' ),
+			array(
+				'code' => 'invalidsha1base36hash',
+				'info' => 'The SHA1Base36 hash provided is not valid'
+			),
 		) );
 	}
 
@@ -383,7 +394,7 @@ class ApiQueryFilearchive extends ApiQueryBase {
 		);
 	}
 
-	public function getVersion() {
-		return __CLASS__ . ': $Id$';
+	public function getHelpUrls() {
+		return 'https://www.mediawiki.org/wiki/API:Filearchive';
 	}
 }

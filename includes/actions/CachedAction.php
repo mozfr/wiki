@@ -1,4 +1,28 @@
 <?php
+/**
+ * Abstract action class with scaffolding for caching HTML and other values
+ * in a single blob.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * http://www.gnu.org/copyleft/gpl.html
+ *
+ * @file
+ * @ingroup Actions
+ * @author Jeroen De Dauw < jeroendedauw@gmail.com >
+ * @since 1.20
+ */
 
 /**
  * Abstract action class with scaffolding for caching HTML and other values
@@ -17,25 +41,7 @@
  * computations here. This function should returns the HTML to be cached.
  * It should not add anything to the PageOutput object!
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- * http://www.gnu.org/copyleft/gpl.html
- *
- * @file
- * @ingroup Action
- * @author Jeroen De Dauw < jeroendedauw@gmail.com >
- * @since 1.20
+ * @ingroup Actions
  */
 abstract class CachedAction extends FormlessAction implements ICacheHelper {
 
@@ -52,7 +58,7 @@ abstract class CachedAction extends FormlessAction implements ICacheHelper {
 	 * If the cache is enabled or not.
 	 *
 	 * @since 1.20
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $cacheEnabled = true;
 
@@ -60,7 +66,7 @@ abstract class CachedAction extends FormlessAction implements ICacheHelper {
 	 * Sets if the cache should be enabled or not.
 	 *
 	 * @since 1.20
-	 * @param boolean $cacheEnabled
+	 * @param bool $cacheEnabled
 	 */
 	public function setCacheEnabled( $cacheEnabled ) {
 		$this->cacheHelper->setCacheEnabled( $cacheEnabled );
@@ -72,8 +78,8 @@ abstract class CachedAction extends FormlessAction implements ICacheHelper {
 	 *
 	 * @since 1.20
 	 *
-	 * @param integer|null $cacheExpiry Sets the cache expiry, either ttl in seconds or unix timestamp.
-	 * @param boolean|null $cacheEnabled Sets if the cache should be enabled or not.
+	 * @param int|null $cacheExpiry Sets the cache expiry, either ttl in seconds or unix timestamp.
+	 * @param bool|null $cacheEnabled Sets if the cache should be enabled or not.
 	 */
 	public function startCache( $cacheExpiry = null, $cacheEnabled = null ) {
 		$this->cacheHelper = new CacheHelper();
@@ -127,7 +133,8 @@ abstract class CachedAction extends FormlessAction implements ICacheHelper {
 	 * @param string|null $key
 	 */
 	public function addCachedHTML( $computeFunction, $args = array(), $key = null ) {
-		$this->getOutput()->addHTML( $this->cacheHelper->getCachedValue( $computeFunction, $args, $key ) );
+		$html = $this->cacheHelper->getCachedValue( $computeFunction, $args, $key );
+		$this->getOutput()->addHTML( $html );
 	}
 
 	/**
@@ -141,11 +148,12 @@ abstract class CachedAction extends FormlessAction implements ICacheHelper {
 	}
 
 	/**
-	 * Sets the time to live for the cache, in seconds or a unix timestamp indicating the point of expiry.
+	 * Sets the time to live for the cache, in seconds or a unix timestamp
+	 * indicating the point of expiry.
 	 *
 	 * @since 1.20
 	 *
-	 * @param integer $cacheExpiry
+	 * @param int $cacheExpiry
 	 */
 	public function setExpiry( $cacheExpiry ) {
 		$this->cacheHelper->setExpiry( $cacheExpiry );
@@ -171,12 +179,11 @@ abstract class CachedAction extends FormlessAction implements ICacheHelper {
 	 *
 	 * @since 1.20
 	 *
-	 * @param boolean $hasCached
+	 * @param bool $hasCached
 	 */
 	public function onCacheInitialized( $hasCached ) {
 		if ( $hasCached ) {
 			$this->getOutput()->setSubtitle( $this->cacheHelper->getCachedNotice( $this->getContext() ) );
 		}
 	}
-
 }

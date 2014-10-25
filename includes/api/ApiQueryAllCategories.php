@@ -60,18 +60,19 @@ class ApiQueryAllCategories extends ApiQueryGeneratorBase {
 
 		if ( !is_null( $params['continue'] ) ) {
 			$cont = explode( '|', $params['continue'] );
-			if ( count( $cont ) != 1 ) {
-				$this->dieUsage( "Invalid continue param. You should pass the " .
-					"original value returned by the previous query", "_badcontinue" );
-			}
+			$this->dieContinueUsageIf( count( $cont ) != 1 );
 			$op = $params['dir'] == 'descending' ? '<' : '>';
 			$cont_from = $db->addQuotes( $cont[0] );
 			$this->addWhere( "cat_title $op= $cont_from" );
 		}
 
 		$dir = ( $params['dir'] == 'descending' ? 'older' : 'newer' );
-		$from = ( is_null( $params['from'] ) ? null : $this->titlePartToKey( $params['from'] ) );
-		$to = ( is_null( $params['to'] ) ? null : $this->titlePartToKey( $params['to'] ) );
+		$from = ( $params['from'] === null
+			? null
+			: $this->titlePartToKey( $params['from'], NS_CATEGORY ) );
+		$to = ( $params['to'] === null
+			? null
+			: $this->titlePartToKey( $params['to'], NS_CATEGORY ) );
 		$this->addWhereRange( 'cat_title', $dir, $from, $to );
 
 		$min = $params['min'];
@@ -79,12 +80,13 @@ class ApiQueryAllCategories extends ApiQueryGeneratorBase {
 		if ( $dir == 'newer' ) {
 			$this->addWhereRange( 'cat_pages', 'newer', $min, $max );
 		} else {
-			$this->addWhereRange( 'cat_pages', 'older', $max, $min);
+			$this->addWhereRange( 'cat_pages', 'older', $max, $min );
 		}
-    
 
 		if ( isset( $params['prefix'] ) ) {
-			$this->addWhere( 'cat_title' . $db->buildLike( $this->titlePartToKey( $params['prefix'] ), $db->anyString() ) );
+			$this->addWhere( 'cat_title' . $db->buildLike(
+				$this->titlePartToKey( $params['prefix'], NS_CATEGORY ),
+				$db->anyString() ) );
 		}
 
 		$this->addOption( 'LIMIT', $params['limit'] + 1 );
@@ -113,8 +115,9 @@ class ApiQueryAllCategories extends ApiQueryGeneratorBase {
 		$result = $this->getResult();
 		$count = 0;
 		foreach ( $res as $row ) {
-			if ( ++ $count > $params['limit'] ) {
-				// We've reached the one extra which shows that there are additional cats to be had. Stop here...
+			if ( ++$count > $params['limit'] ) {
+				// We've reached the one extra which shows that there are
+				// additional cats to be had. Stop here...
 				$this->setContinueEnumParameter( 'continue', $row->cat_title );
 				break;
 			}
@@ -125,7 +128,7 @@ class ApiQueryAllCategories extends ApiQueryGeneratorBase {
 				$pages[] = $titleObj;
 			} else {
 				$item = array();
-				$result->setContent( $item, $titleObj->getText() );
+				ApiResult::setContent( $item, $titleObj->getText() );
 				if ( isset( $prop['size'] ) ) {
 					$item['size'] = intval( $row->cat_pages );
 					$item['pages'] = $row->cat_pages - $row->cat_subcats - $row->cat_files;
@@ -222,13 +225,7 @@ class ApiQueryAllCategories extends ApiQueryGeneratorBase {
 	}
 
 	public function getDescription() {
-		return 'Enumerate all categories';
-	}
-
-	public function getPossibleErrors() {
-		return array_merge( parent::getPossibleErrors(), array(
-			array( 'code' => '_badcontinue', 'info' => 'Invalid continue param. You should pass the original value returned by the previous query' ),
-		) );
+		return 'Enumerate all categories.';
 	}
 
 	public function getExamples() {
@@ -240,9 +237,5 @@ class ApiQueryAllCategories extends ApiQueryGeneratorBase {
 
 	public function getHelpUrls() {
 		return 'https://www.mediawiki.org/wiki/API:Allcategories';
-	}
-
-	public function getVersion() {
-		return __CLASS__ . ': $Id$';
 	}
 }

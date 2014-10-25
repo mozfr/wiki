@@ -29,39 +29,44 @@
  * @since 1.19
  */
 class LockManagerGroup {
-	/**
-	 * @var LockManagerGroup
-	 */
-	protected static $instance = null;
+	/** @var array (domain => LockManager) */
+	protected static $instances = array();
 
-	/** @var Array of (name => ('class' =>, 'config' =>, 'instance' =>)) */
+	protected $domain; // string; domain (usually wiki ID)
+
+	/** @var array of (name => ('class' => ..., 'config' => ..., 'instance' => ...)) */
 	protected $managers = array();
 
-	protected function __construct() {}
-
 	/**
-	 * @return LockManagerGroup
+	 * @param string $domain Domain (usually wiki ID)
 	 */
-	public static function singleton() {
-		if ( self::$instance == null ) {
-			self::$instance = new self();
-			self::$instance->initFromGlobals();
-		}
-		return self::$instance;
+	protected function __construct( $domain ) {
+		$this->domain = $domain;
 	}
 
 	/**
-	 * Destroy the singleton instance, so that a new one will be created next
-	 * time singleton() is called.
+	 * @param bool|string $domain Domain (usually wiki ID). Default: false.
+	 * @return LockManagerGroup
 	 */
-	public static function destroySingleton() {
-		self::$instance = null;
+	public static function singleton( $domain = false ) {
+		$domain = ( $domain === false ) ? wfWikiID() : $domain;
+		if ( !isset( self::$instances[$domain] ) ) {
+			self::$instances[$domain] = new self( $domain );
+			self::$instances[$domain]->initFromGlobals();
+		}
+
+		return self::$instances[$domain];
+	}
+
+	/**
+	 * Destroy the singleton instances
+	 */
+	public static function destroySingletons() {
+		self::$instances = array();
 	}
 
 	/**
 	 * Register lock managers from the global variables
-	 *
-	 * @return void
 	 */
 	protected function initFromGlobals() {
 		global $wgLockManagers;
@@ -72,12 +77,12 @@ class LockManagerGroup {
 	/**
 	 * Register an array of file lock manager configurations
 	 *
-	 * @param $configs Array
-	 * @return void
+	 * @param array $configs
 	 * @throws MWException
 	 */
 	protected function register( array $configs ) {
 		foreach ( $configs as $config ) {
+			$config['domain'] = $this->domain;
 			if ( !isset( $config['name'] ) ) {
 				throw new MWException( "Cannot register a lock manager with no name." );
 			}
@@ -88,8 +93,8 @@ class LockManagerGroup {
 			$class = $config['class'];
 			unset( $config['class'] ); // lock manager won't need this
 			$this->managers[$name] = array(
-				'class'    => $class,
-				'config'   => $config,
+				'class' => $class,
+				'config' => $config,
 				'instance' => null
 			);
 		}
@@ -98,7 +103,7 @@ class LockManagerGroup {
 	/**
 	 * Get the lock manager object with a given name
 	 *
-	 * @param $name string
+	 * @param string $name
 	 * @return LockManager
 	 * @throws MWException
 	 */
@@ -112,7 +117,24 @@ class LockManagerGroup {
 			$config = $this->managers[$name]['config'];
 			$this->managers[$name]['instance'] = new $class( $config );
 		}
+
 		return $this->managers[$name]['instance'];
+	}
+
+	/**
+	 * Get the config array for a lock manager object with a given name
+	 *
+	 * @param string $name
+	 * @return array
+	 * @throws MWException
+	 */
+	public function config( $name ) {
+		if ( !isset( $this->managers[$name] ) ) {
+			throw new MWException( "No lock manager defined with the name `$name`." );
+		}
+		$class = $this->managers[$name]['class'];
+
+		return array( 'class' => $class ) + $this->managers[$name]['config'];
 	}
 
 	/**

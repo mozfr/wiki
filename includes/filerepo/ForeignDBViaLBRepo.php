@@ -27,12 +27,23 @@
  * @ingroup FileRepo
  */
 class ForeignDBViaLBRepo extends LocalRepo {
-	var $wiki, $dbName, $tablePrefix;
-	var $fileFactory = array( 'ForeignDBFile', 'newFromTitle' );
-	var $fileFromRowFactory = array( 'ForeignDBFile', 'newFromRow' );
+	/** @var string */
+	protected $wiki;
+
+	/** @var string */
+	protected $dbName;
+
+	/** @var string */
+	protected $tablePrefix;
+
+	/** @var array */
+	protected $fileFactory = array( 'ForeignDBFile', 'newFromTitle' );
+
+	/** @var array */
+	protected $fileFromRowFactory = array( 'ForeignDBFile', 'newFromRow' );
 
 	/**
-	 * @param $info array|null
+	 * @param array|null $info
 	 */
 	function __construct( $info ) {
 		parent::__construct( $info );
@@ -61,7 +72,7 @@ class ForeignDBViaLBRepo extends LocalRepo {
 
 	/**
 	 * Get a key on the primary cache for this repository.
-	 * Returns false if the repository's cache is not accessible at this site. 
+	 * Returns false if the repository's cache is not accessible at this site.
 	 * The parameters are the parts of the key, as for wfMemcKey().
 	 * @return bool|string
 	 */
@@ -69,6 +80,7 @@ class ForeignDBViaLBRepo extends LocalRepo {
 		if ( $this->hasSharedCache() ) {
 			$args = func_get_args();
 			array_unshift( $args, $this->wiki );
+
 			return implode( ':', $args );
 		} else {
 			return false;
@@ -77,5 +89,9 @@ class ForeignDBViaLBRepo extends LocalRepo {
 
 	protected function assertWritableRepo() {
 		throw new MWException( get_class( $this ) . ': write operations are not supported.' );
+	}
+
+	public function getInfo() {
+		return FileRepo::getInfo();
 	}
 }

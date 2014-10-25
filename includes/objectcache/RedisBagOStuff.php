@@ -20,29 +20,13 @@
  * @file
  */
 
-
 class RedisBagOStuff extends BagOStuff {
-	protected $connectTimeout, $persistent, $password, $automaticFailover;
-
-	/**
-	 * A list of server names, from $params['servers']
-	 */
+	/** @var RedisConnectionPool */
+	protected $redisPool;
+	/** @var Array List of server names */
 	protected $servers;
-
-	/**
-	 * A cache of Redis objects, representing connections to Redis servers.
-	 * The key is the server name.
-	 */
-	protected $conns = array();
-
-	/**
-	 * An array listing "dead" servers which have had a connection error in
-	 * the past. Servers are marked dead for a limited period of time, to
-	 * avoid excessive overhead from repeated connection timeouts. The key in
-	 * the array is the server name, the value is the UNIX timestamp at which
-	 * the server is resurrected.
-	 */
-	protected $deadServers = array();
+	/** @var bool */
+	protected $automaticFailover;
 
 	/**
 	 * Construct a RedisBagOStuff object. Parameters are:
@@ -71,18 +55,15 @@ class RedisBagOStuff extends BagOStuff {
 	 *     flap, for example if it is in swap death.
 	 */
 	function __construct( $params ) {
-		if ( !extension_loaded( 'redis' ) ) {
-			throw new MWException( __CLASS__. ' requires the phpredis extension: ' .
-				'https://github.com/nicolasff/phpredis' );
+		$redisConf = array( 'serializer' => 'none' ); // manage that in this class
+		foreach ( array( 'connectTimeout', 'persistent', 'password' ) as $opt ) {
+			if ( isset( $params[$opt] ) ) {
+				$redisConf[$opt] = $params[$opt];
+			}
 		}
+		$this->redisPool = RedisConnectionPool::singleton( $redisConf );
 
 		$this->servers = $params['servers'];
-		$this->connectTimeout = isset( $params['connectTimeout'] )
-			? $params['connectTimeout'] : 1;
-		$this->persistent = !empty( $params['persistent'] );
-		if ( isset( $params['password'] ) ) {
-			$this->password = $params['password'];
-		}
 		if ( isset( $params['automaticFailover'] ) ) {
 			$this->automaticFailover = $params['automaticFailover'];
 		} else {
@@ -90,54 +71,89 @@ class RedisBagOStuff extends BagOStuff {
 		}
 	}
 
-	public function get( $key ) {
-		wfProfileIn( __METHOD__ );
+	public function get( $key, &$casToken = null ) {
+		$section = new ProfileSection( __METHOD__ );
+
 		list( $server, $conn ) = $this->getConnection( $key );
 		if ( !$conn ) {
-			wfProfileOut( __METHOD__ );
 			return false;
 		}
 		try {
-			$result = $conn->get( $key );
+			$value = $conn->get( $key );
+			$casToken = $value;
+			$result = $this->unserialize( $value );
 		} catch ( RedisException $e ) {
 			$result = false;
-			$this->handleException( $server, $e );
+			$this->handleException( $conn, $e );
 		}
+
 		$this->logRequest( 'get', $key, $server, $result );
-		wfProfileOut( __METHOD__ );
 		return $result;
 	}
 
 	public function set( $key, $value, $expiry = 0 ) {
-		wfProfileIn( __METHOD__ );
+		$section = new ProfileSection( __METHOD__ );
+
 		list( $server, $conn ) = $this->getConnection( $key );
 		if ( !$conn ) {
-			wfProfileOut( __METHOD__ );
 			return false;
 		}
 		$expiry = $this->convertToRelative( $expiry );
 		try {
-			if ( !$expiry ) {
-				// No expiry, that is very different from zero expiry in Redis
-				$result = $conn->set( $key, $value );
+			if ( $expiry ) {
+				$result = $conn->setex( $key, $expiry, $this->serialize( $value ) );
 			} else {
-				$result = $conn->setex( $key, $expiry, $value );
+				// No expiry, that is very different from zero expiry in Redis
+				$result = $conn->set( $key, $this->serialize( $value ) );
 			}
 		} catch ( RedisException $e ) {
 			$result = false;
-			$this->handleException( $server, $e );
+			$this->handleException( $conn, $e );
 		}
 
 		$this->logRequest( 'set', $key, $server, $result );
-		wfProfileOut( __METHOD__ );
+		return $result;
+	}
+
+	public function cas( $casToken, $key, $value, $expiry = 0 ) {
+		$section = new ProfileSection( __METHOD__ );
+
+		list( $server, $conn ) = $this->getConnection( $key );
+		if ( !$conn ) {
+			return false;
+		}
+		$expiry = $this->convertToRelative( $expiry );
+		try {
+			$conn->watch( $key );
+
+			if ( $this->serialize( $this->get( $key ) ) !== $casToken ) {
+				$conn->unwatch();
+				return false;
+			}
+
+			// multi()/exec() will fail atomically if the key changed since watch()
+			$conn->multi();
+			if ( $expiry ) {
+				$conn->setex( $key, $expiry, $this->serialize( $value ) );
+			} else {
+				// No expiry, that is very different from zero expiry in Redis
+				$conn->set( $key, $this->serialize( $value ) );
+			}
+			$result = ( $conn->exec() == array( true ) );
+		} catch ( RedisException $e ) {
+			$result = false;
+			$this->handleException( $conn, $e );
+		}
+
+		$this->logRequest( 'cas', $key, $server, $result );
 		return $result;
 	}
 
 	public function delete( $key, $time = 0 ) {
-		wfProfileIn( __METHOD__ );
+		$section = new ProfileSection( __METHOD__ );
+
 		list( $server, $conn ) = $this->getConnection( $key );
 		if ( !$conn ) {
-			wfProfileOut( __METHOD__ );
 			return false;
 		}
 		try {
@@ -146,15 +162,16 @@ class RedisBagOStuff extends BagOStuff {
 			$result = true;
 		} catch ( RedisException $e ) {
 			$result = false;
-			$this->handleException( $server, $e );
+			$this->handleException( $conn, $e );
 		}
+
 		$this->logRequest( 'delete', $key, $server, $result );
-		wfProfileOut( __METHOD__ );
 		return $result;
 	}
 
 	public function getMulti( array $keys ) {
-		wfProfileIn( __METHOD__ );
+		$section = new ProfileSection( __METHOD__ );
+
 		$batches = array();
 		$conns = array();
 		foreach ( $keys as $key ) {
@@ -180,72 +197,42 @@ class RedisBagOStuff extends BagOStuff {
 				}
 				foreach ( $batchResult as $i => $value ) {
 					if ( $value !== false ) {
-						$result[$batchKeys[$i]] = $value;
+						$result[$batchKeys[$i]] = $this->unserialize( $value );
 					}
 				}
 			} catch ( RedisException $e ) {
-				$this->handleException( $server, $e );
+				$this->handleException( $conn, $e );
 			}
 		}
 
 		$this->debug( "getMulti for " . count( $keys ) . " keys " .
 			"returned " . count( $result ) . " results" );
-		wfProfileOut( __METHOD__ );
 		return $result;
 	}
 
 	public function add( $key, $value, $expiry = 0 ) {
-		wfProfileIn( __METHOD__ );
+		$section = new ProfileSection( __METHOD__ );
+
 		list( $server, $conn ) = $this->getConnection( $key );
 		if ( !$conn ) {
-			wfProfileOut( __METHOD__ );
 			return false;
 		}
 		$expiry = $this->convertToRelative( $expiry );
 		try {
-			$result = $conn->setnx( $key, $value );
-			if ( $result && $expiry ) {
+			if ( $expiry ) {
+				$conn->multi();
+				$conn->setnx( $key, $this->serialize( $value ) );
 				$conn->expire( $key, $expiry );
-			}
-		} catch ( RedisException $e ) {
-			$result = false;
-			$this->handleException( $server, $e );
-		}
-		$this->logRequest( 'add', $key, $server, $result );
-		wfProfileOut( __METHOD__ );
-		return $result;
-	}
-
-	/**
-	 * Non-atomic implementation of replace(). Could perhaps be done atomically
-	 * with WATCH or scripting, but this function is rarely used.
-	 */
-	public function replace( $key, $value, $expiry = 0 ) {
-		wfProfileIn( __METHOD__ );
-		list( $server, $conn ) = $this->getConnection( $key );
-		if ( !$conn ) {
-			wfProfileOut( __METHOD__ );
-			return false;
-		}
-		if ( !$conn->exists( $key ) ) {
-			wfProfileOut( __METHOD__ );
-			return false;
-		}
-
-		$expiry = $this->convertToRelative( $expiry );
-		try {
-			if ( !$expiry ) {
-				$result = $conn->set( $key, $value );
+				$result = ( $conn->exec() == array( true, true ) );
 			} else {
-				$result = $conn->setex( $key, $expiry, $value );
+				$result = $conn->setnx( $key, $this->serialize( $value ) );
 			}
 		} catch ( RedisException $e ) {
 			$result = false;
-			$this->handleException( $server, $e );
+			$this->handleException( $conn, $e );
 		}
 
-		$this->logRequest( 'replace', $key, $server, $result );
-		wfProfileOut( __METHOD__ );
+		$this->logRequest( 'add', $key, $server, $result );
 		return $result;
 	}
 
@@ -259,136 +246,74 @@ class RedisBagOStuff extends BagOStuff {
 	 * atomic.
 	 */
 	public function incr( $key, $value = 1 ) {
-		wfProfileIn( __METHOD__ );
+		$section = new ProfileSection( __METHOD__ );
+
 		list( $server, $conn ) = $this->getConnection( $key );
 		if ( !$conn ) {
-			wfProfileOut( __METHOD__ );
 			return false;
 		}
 		if ( !$conn->exists( $key ) ) {
-			wfProfileOut( __METHOD__ );
 			return null;
 		}
 		try {
-			$result = $conn->incrBy( $key, $value );
+			$result = $this->unserialize( $conn->incrBy( $key, $value ) );
 		} catch ( RedisException $e ) {
 			$result = false;
-			$this->handleException( $server, $e );
+			$this->handleException( $conn, $e );
 		}
 
 		$this->logRequest( 'incr', $key, $server, $result );
-		wfProfileOut( __METHOD__ );
 		return $result;
 	}
 
 	/**
+	 * @param mixed $data
+	 * @return string
+	 */
+	protected function serialize( $data ) {
+		// Ignore digit strings and ints so INCR/DECR work
+		return ( is_int( $data ) || ctype_digit( $data ) ) ? $data : serialize( $data );
+	}
+
+	/**
+	 * @param string $data
+	 * @return mixed
+	 */
+	protected function unserialize( $data ) {
+		// Ignore digit strings and ints so INCR/DECR work
+		return ( is_int( $data ) || ctype_digit( $data ) ) ? $data : unserialize( $data );
+	}
+
+	/**
 	 * Get a Redis object with a connection suitable for fetching the specified key
+	 * @return Array (server, RedisConnRef) or (false, false)
 	 */
 	protected function getConnection( $key ) {
 		if ( count( $this->servers ) === 1 ) {
 			$candidates = $this->servers;
 		} else {
-			// Use consistent hashing
-			$hashes = array();
-			foreach ( $this->servers as $server ) {
-				$hashes[$server] = md5( $server . '/' . $key );
-			}
-			asort( $hashes );
+			$candidates = $this->servers;
+			ArrayUtils::consistentHashSort( $candidates, $key, '/' );
 			if ( !$this->automaticFailover ) {
-				reset( $hashes );
-				$candidates = array( key( $hashes ) );
-			} else {
-				$candidates = array_keys( $hashes );
+				$candidates = array_slice( $candidates, 0, 1 );
 			}
 		}
 
 		foreach ( $candidates as $server ) {
-			$conn = $this->getConnectionToServer( $server );
+			$conn = $this->redisPool->getConnection( $server );
 			if ( $conn ) {
 				return array( $server, $conn );
 			}
 		}
+		$this->setLastError( BagOStuff::ERR_UNREACHABLE );
 		return array( false, false );
-	}
-
-	/**
-	 * Get a connection to the server with the specified name. Connections
-	 * are cached, and failures are persistent to avoid multiple timeouts.
-	 *
-	 * @return Redis object, or false on failure
-	 */
-	protected function getConnectionToServer( $server ) {
-		if ( isset( $this->deadServers[$server] ) ) {
-			$now = time();
-			if ( $now > $this->deadServers[$server] ) {
-				// Dead time expired
-				unset( $this->deadServers[$server] );
-			} else {
-				// Server is dead
-				$this->debug( "server $server is marked down for another " .
-					($this->deadServers[$server] - $now ) .
-					" seconds, can't get connection" );
-				return false;
-			}
-		}
-
-		if ( isset( $this->conns[$server] ) ) {
-			return $this->conns[$server];
-		}
-
-		if ( substr( $server, 0, 1 ) === '/' ) {
-			// UNIX domain socket
-			// These are required by the redis extension to start with a slash, but
-			// we still need to set the port to a special value to make it work.
-			$host = $server;
-			$port = 0;
-		} else {
-			// TCP connection
-			$hostPort = IP::splitHostAndPort( $server );
-			if ( !$hostPort ) {
-				throw new MWException( __CLASS__.": invalid configured server \"$server\"" );
-			}
-			list( $host, $port ) = $hostPort;
-			if ( $port === false ) {
-				$port = 6379;
-			}
-		}
-		$conn = new Redis;
-		try {
-			if ( $this->persistent ) {
-				$this->debug( "opening persistent connection to $host:$port" );
-				$result = $conn->pconnect( $host, $port, $this->connectTimeout );
-			} else {
-				$this->debug( "opening non-persistent connection to $host:$port" );
-				$result = $conn->connect( $host, $port, $this->connectTimeout );
-			}
-			if ( !$result ) {
-				$this->logError( "could not connect to server $server" );
-				// Mark server down for 30s to avoid further timeouts
-				$this->deadServers[$server] = time() + 30;
-				return false;
-			}
-			if ( $this->password !== null ) {
-				if ( !$conn->auth( $this->password ) ) {
-					$this->logError( "authentication error connecting to $server" );
-				}
-			}
-		} catch ( RedisException $e ) {
-			$this->deadServers[$server] = time() + 30;
-			wfDebugLog( 'redis', "Redis exception: " . $e->getMessage() . "\n" );
-			return false;
-		}
-
-		$conn->setOption( Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP );
-		$this->conns[$server] = $conn;
-		return $conn;
 	}
 
 	/**
 	 * Log a fatal error
 	 */
 	protected function logError( $msg ) {
-		wfDebugLog( 'redis', "Redis error: $msg\n" );
+		wfDebugLog( 'redis', "Redis error: $msg" );
 	}
 
 	/**
@@ -397,9 +322,9 @@ class RedisBagOStuff extends BagOStuff {
 	 * not. The safest response for us is to explicitly destroy the connection
 	 * object and let it be reopened during the next request.
 	 */
-	protected function handleException( $server, $e ) {
-		wfDebugLog( 'redis', "Redis exception on server $server: " . $e->getMessage() . "\n" );
-		unset( $this->conns[$server] );
+	protected function handleException( RedisConnRef $conn, $e ) {
+		$this->setLastError( BagOStuff::ERR_UNEXPECTED );
+		$this->redisPool->handleError( $conn, $e );
 	}
 
 	/**
@@ -410,4 +335,3 @@ class RedisBagOStuff extends BagOStuff {
 			( $result === false ? "failure" : "success" ) );
 	}
 }
-
