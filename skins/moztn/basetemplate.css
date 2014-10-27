@@ -1,0 +1,192 @@
+/* mozilla-tunisia.org Base Template Styles
+ * Initial Design by MedFiras
+ */
+
+/* Basic Structure */
+
+	body {
+		min-width: 610px;
+		margin: 20px;
+	}
+
+	#container {
+		max-width: 100%; /* cevendish: 70em; */
+		margin: 0 auto;
+		background: url("bg-content.png") repeat fixed 0 0 #F6F6F1;
+	}
+
+	#mBody {
+		clear: both;
+		padding: 0 0 1em 0;
+		margin: 0 auto;
+		width: 100%;
+	}
+
+	#side {
+		float: left;
+		width: 17%; /* cevendish: 23% */
+		box-shadow: 0 2px 2px rgba(0, 0, 0, 0.15);
+		margin-left: 10px;
+	}
+
+	#mainContent {
+		font-size: 100%;
+		float: right;
+		width: 77%; /* cevendish: 75% */
+		margin-bottom: 1em;
+
+		background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #E8E8E8;
+    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.15);
+    margin: 0 10px 40px 0;
+    overflow: hidden;
+    padding: 19px;
+	}
+	#mainContent h1{
+		font: 32px/1.1 "Bebas Neue","League Gothic",Haettenschweiler,"Arial Narrow",sans-serif;
+	    letter-spacing: 0.5px;
+	    text-align: left;
+	    text-transform: uppercase;
+	}
+	.nomenu #mainContent {
+		float: none;
+		width: 100%;
+	}
+	.bodyleft {
+		float: right !important;
+		width: 75% !important;
+	}
+	#mainContent.right {
+		float: left;
+		width: 62%;
+	}
+
+	#side.right {
+		float: right;
+		width: 35%;
+	}
+
+    #mozilla-org a {
+        float: right;
+        display: block;
+        text-indent: -5000em;
+        width: 110px;
+        height: 25px;
+        text-decoration: none;
+        background: url("subsite_mozilla-org.gif") no-repeat;
+        margin-bottom: 1.5em;
+    }
+
+/* Header */
+	#logo{
+		display: block;
+    margin-left: 17%;
+    position: absolute;
+	}
+    div#header {
+        clear: both;
+    }
+
+	#header {
+	    margin-bottom: 2em;
+	}
+
+	#header ul {
+        margin-left: 24%;
+    	margin-top: 55px;
+        padding-right: 1em;
+		line-height: 1.4em;
+		font-size: 100%;
+		padding-left: 15px;
+	}
+
+	#header li {
+		display: inline;
+		padding: 0 6px 0 0;
+        margin-right: 0 1px 0 0;
+		white-space: nowrap;
+	}
+
+    #header ul li.selected a
+    {
+        background-position: 0% -200px;
+        color: #EB9F81;
+    }
+
+    #header ul li.selected
+    {
+        background-position: 100% -200px;
+        border-bottom: 1px solid #fff;
+    }
+
+    /* header tabs mouseover effects */
+    #header ul li.selected:hover a
+    {
+        background-position: 0% 0%;
+        color: #333;
+    }
+
+    #header ul li.selected:hover
+    {
+        background-position: 100% 0%;
+        border-bottom: 1px solid #fff;
+    }
+    #header ul li a:hover
+    {
+    	color: #F8D575;
+    }
+    #header h1 a {
+        /*background: transparent url("wiki_header_logo.gif") no-repeat scroll 5px -5px; */
+        color: #FFFFFF;
+	    font: 32px/1 "Bebas Neue","League Gothic",Haettenschweiler,Impact,"Arial Narrow",sans-serif;	    
+	    text-transform: uppercase;
+	    letter-spacing: 1px;
+    }
+
+    #header h1 a:hover {
+        text-decoration: none;        
+    }
+
+/* Sidebar */
+
+	#getcd {
+		margin: 1em 0 0 45px;
+	}
+
+/* Footer */
+
+	#footer {
+		clear: both;
+		margin-top: 1em;
+	}
+
+	#footer ul {
+		background: none repeat scroll 0 0 #450000;
+	    
+	    border-top: 6px solid #3C0000;
+	    color: #F5F5F0;
+	    font: italic 1.2em/1.1 Georgia,Times,"Times New Roman",serif;
+	    padding: 1.3em 0 0;
+	    text-align: center;
+	}
+
+	#footer li {
+		display: inline;
+		padding: 0 20px 0 0;
+		margin: 0;
+		white-space: nowrap;
+	}
+
+	#footer p {
+		margin: 0.6em 0;
+	}
+
+/*accessibility tweaks*/
+	.skipLink {
+		position: absolute;
+		left: -999px;
+		width: 990px;
+	}
+	hr.hide {
+		display: none;
+	}
